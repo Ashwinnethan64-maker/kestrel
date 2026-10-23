@@ -17,6 +17,7 @@ export function DocketLens() {
   const activeStation = useCommandDeckStore((s) => s.activeStation);
   const openCaseNexus = useCommandDeckStore((s) => s.openCaseNexus);
   const altitude = useCommandDeckStore((s) => s.altitude);
+  const isOfflineMode = useCommandDeckStore((s) => s.isOfflineMode);
 
   const client = useIntelClient();
 
@@ -25,8 +26,9 @@ export function DocketLens() {
     data: cases = [],
     isLoading: isCasesLoading,
     error: casesError,
+    refetch: refetchCases,
   } = useQuery({
-    queryKey: ['cases', activeOfficerId, altitude],
+    queryKey: ['cases', activeOfficerId, altitude, isOfflineMode],
     queryFn: () => {
       // If Field IO, fetch their assigned cases. If Commander, fetch all station/city cases
       if (altitude === 'field_io' && activeOfficerId) {
@@ -201,9 +203,29 @@ export function DocketLens() {
             </span>
           </div>
         ) : casesError ? (
-          <div className="py-16 flex items-center justify-center flex-col gap-2 text-red-400">
-            <AlertOctagon className="w-8 h-8" />
-            <span className="font-mono text-sm">Failed to load docket cases</span>
+          <div className="py-16 flex items-center justify-center flex-col gap-3 text-red-400 bg-red-950/10 border border-red-500/20 rounded-xl p-6">
+            <AlertOctagon className="w-10 h-10 text-red-400" />
+            <span className="font-mono text-sm font-semibold">Failed to load live docket cases</span>
+            <p className="text-xs text-slate-400 text-center max-w-md">
+              The live backend service is currently unreachable or disconnected. You can retry the connection or switch to the in-memory tactical fail-safe dataset.
+            </p>
+            <div className="flex items-center gap-3 mt-2">
+              <button
+                onClick={() => refetchCases()}
+                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 rounded font-mono text-xs font-semibold transition-colors"
+              >
+                Retry Connection
+              </button>
+              <button
+                onClick={() => {
+                  useCommandDeckStore.getState().setOfflineMode(true);
+                  refetchCases();
+                }}
+                className="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 rounded font-mono text-xs font-semibold transition-colors"
+              >
+                Use Offline Failsafe Dataset
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[500px]">

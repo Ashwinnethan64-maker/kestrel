@@ -24,6 +24,7 @@ interface ShiftTaskListProps {
 
 export function ShiftTaskList({ cases }: ShiftTaskListProps) {
   const activeOfficerId = useCommandDeckStore((s) => s.activeOfficerId);
+  const isOfflineMode = useCommandDeckStore((s) => s.isOfflineMode);
   const openCaseNexus = useCommandDeckStore((s) => s.openCaseNexus);
   const client = useIntelClient();
   const queryClient = useQueryClient();
@@ -41,7 +42,7 @@ export function ShiftTaskList({ cases }: ShiftTaskListProps) {
 
   // Load shift tasks
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ['tasks', activeOfficerId],
+    queryKey: ['tasks', activeOfficerId, isOfflineMode],
     queryFn: () => {
       if (activeOfficerId) {
         return client.getTasks({ officerId: activeOfficerId });

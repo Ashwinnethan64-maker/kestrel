@@ -227,7 +227,11 @@ export function DeckShell() {
   });
 
   return (
-    <div id="kestrel-deck-shell" className="flex flex-col h-screen w-screen bg-deck-deep text-tx-primary overflow-hidden bg-tactical-grid">
+    <div
+      id="kestrel-deck-shell"
+      style={{ minHeight: '100vh', width: '100vw', backgroundColor: '#050b14', color: '#f8fafc' }}
+      className="flex flex-col h-screen w-screen bg-deck-deep text-tx-primary overflow-hidden bg-tactical-grid"
+    >
       {/* ── Top HUD Bar ──────────────────────────────────────────────────── */}
       <DeckTopbar
         language={language}
@@ -302,16 +306,16 @@ export function DeckShell() {
       </nav>
 
       {/* ── Main Split: Tactical Lens (65%) + Copilot Rail (35%) ──────── */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
         {/* Tactical Lens Canvas */}
-        <main className="flex-[65] flex flex-col min-w-0 border-r border-white/5" role="main">
+        <main className="flex-1 lg:flex-[65] flex flex-col min-w-0 border-r border-white/5 overflow-hidden" role="main">
           {lensMode === 'morning_docket' && <DocketLens />}
           {lensMode === 'case_nexus' && <CaseNexusLens />}
           {lensMode === 'zonal_radar' && <ZonalStrategicLens />}
         </main>
 
         {/* Ambient Copilot Rail */}
-        <aside className="flex-[35] min-w-0 bg-deck-surface/40 border-l border-white/5 flex flex-col h-full" role="complementary">
+        <aside className="h-64 lg:h-full lg:flex-[35] min-w-0 bg-deck-surface/40 border-t lg:border-t-0 lg:border-l border-white/5 flex flex-col shrink-0 lg:shrink" role="complementary">
           <AmbientCopilot />
         </aside>
       </div>

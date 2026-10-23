@@ -243,16 +243,33 @@ export function DeckTopbar({ language, onLanguageToggle, onSearchTrigger }: Deck
 
   // One-time backend health check on mount
   useEffect(() => {
+    let isCancelled = false;
     setBackendStatus('checking');
-    fetch('/api/analytics/summary', { signal: AbortSignal.timeout(4000) })
-      .then(() => setBackendStatus('online'))
+
+    fetch('/api/analytics/summary', { signal: AbortSignal.timeout(2000) })
+      .then((res) => {
+        if (!isCancelled) {
+          if (res.ok) {
+            setBackendStatus('online');
+            setOfflineMode(false);
+          } else {
+            setBackendStatus('offline');
+            setOfflineMode(true);
+          }
+        }
+      })
       .catch(() => {
-        setBackendStatus('offline');
-        // Auto-engage offline mode if backend unreachable
-        setOfflineMode(true);
+        if (!isCancelled) {
+          setBackendStatus('offline');
+          // Auto-engage offline failover immediately
+          setOfflineMode(true);
+        }
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [setBackendStatus, setOfflineMode]);
 
   const handleOfficerSelect = (officer: OfficerWithWorkload) => {
     const newAltitude = ALTITUDE_FOR_ROLE[officer.role] ?? 'field_io';
