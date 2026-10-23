@@ -92,9 +92,9 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
   - [x] **Sub-task 1.1.1**: Create `frontend/src/store/useCommandDeckStore.ts` with typed state (`altitude`, `activeOfficerId`, `activeStation`, `lensMode`, `caseSubLens`, `activeCaseId`, `activeSuspectId`, `activeBoundingBox`, `timeline`, `pinnedItemIds`, `isOfflineMode`, `backendStatus`).
   - [x] **Sub-task 1.1.2**: Implement store transition actions (`openCaseNexus`, `closeCaseNexus`, `setAltitude`, `setCaseSubLens`, `pinItem`, `unpinItem`, `setOfflineMode`, `getPromptContextEnvelope`).
 
-- [ ] **Task 1.2: Dual-Mode API Services Layer**
-  - [ ] **Sub-task 1.2.1**: Implement `frontend/src/services/api/client.ts` with typed REST client and streaming fetch reader for Groq Server-Sent Events (`POST /api/copilot/query`).
-  - [ ] **Sub-task 1.2.2**: Implement `frontend/src/services/api/mockClient.ts` with 100% in-memory failover pre-loaded with curated cases, officers, tasks, and accused graph relations for zero-network resilience.
+- [x] **Task 1.2: Dual-Mode API Services Layer**
+  - [x] **Sub-task 1.2.1**: Implement `frontend/src/services/api/client.ts` with typed REST client and streaming fetch reader for Groq Server-Sent Events (`POST /api/copilot/query`).
+  - [x] **Sub-task 1.2.2**: Implement `frontend/src/services/api/mockClient.ts` with 100% in-memory failover pre-loaded with curated cases, officers, tasks, and accused graph relations for zero-network resilience.
 
 - [ ] **Task 1.3: Top HUD Navigation Bar (`DeckTopbar.tsx`)**
   - [ ] **Sub-task 1.3.1**: Create `frontend/src/components/deck/DeckTopbar.tsx` featuring tactical brand crest, station breadcrumb, search trigger, and language toggle (`EN`/`KN`).
