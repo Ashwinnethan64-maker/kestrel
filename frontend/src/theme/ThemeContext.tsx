@@ -25,11 +25,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [activeTheme, setActiveTheme] = useState<ThemeDefinition>(() => {
     try {
       const stored = localStorage.getItem(THEME_STORAGE_KEY);
-      if (stored) {
-        if (stored === KESTREL_DEFAULT_THEME.id) return KESTREL_DEFAULT_THEME;
-        const found = THEMES_REGISTRY.find((t) => t.id === stored);
+      if (stored === "editorial-design") {
+        const found = THEMES_REGISTRY.find((t) => t.id === "editorial-design");
         if (found) return found;
       }
+      // Default immediately to Editorial Design
+      localStorage.setItem(THEME_STORAGE_KEY, "editorial-design");
     } catch (e) {
       // LocalStorage access guard
     }

@@ -12,6 +12,17 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, '../packages/shared/src')
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-charts': ['recharts'],
+          'vendor-icons': ['lucide-react'],
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {
