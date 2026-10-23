@@ -10,7 +10,9 @@ import type {
   GangTerritory,
   SpatioTemporalDensityResponse,
   NetworkCentralityResponse,
-  SuspectCentralityMetrics
+  SuspectCentralityMetrics,
+  QueryIntentClassification,
+  SemanticCaseSearchResult
 } from '@kestrel/shared';
 
 const isLiveMode = import.meta.env.VITE_API_SOURCE === 'live';
@@ -101,6 +103,26 @@ class LiveOrMockClient {
   async getSuspectCentralityMetrics(suspectId: string): Promise<ApiResponse<SuspectCentralityMetrics & { networkRank: number }>> {
     if (!this.isLive) return mockClient.getSuspectCentralityMetrics(suspectId);
     const res = await fetch(`/api/network/accused/${encodeURIComponent(suspectId)}/metrics`);
+    return res.json();
+  }
+
+  async classifyIntent(query: string, context?: Record<string, unknown>): Promise<ApiResponse<QueryIntentClassification>> {
+    if (!this.isLive) return mockClient.classifyIntent(query, context);
+    const res = await fetch('/api/copilot/intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, ...context })
+    });
+    return res.json();
+  }
+
+  async searchCasesBySemanticMO(query: string, limit: number = 5): Promise<ApiResponse<SemanticCaseSearchResult[]>> {
+    if (!this.isLive) return mockClient.searchCasesBySemanticMO(query, limit);
+    const res = await fetch('/api/copilot/semantic-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, limit })
+    });
     return res.json();
   }
 }

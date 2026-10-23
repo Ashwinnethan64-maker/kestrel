@@ -60,3 +60,40 @@ export interface TacticalAnalyticsSummary {
     ratePercent: number;
   }[];
 }
+
+// Hybrid RAG & Intent Classification Types
+export type QueryIntentType = 'STRUCTURED_SQL' | 'SEMANTIC_VECTOR' | 'HYBRID' | 'CONTEXTUAL_FOCUS';
+
+export interface ExtractedQueryEntities {
+  policeStation?: string;
+  crimeCategory?: string;
+  priority?: string;
+  status?: string;
+  suspectName?: string;
+  gangAffiliation?: string;
+  daysAgo?: number;
+}
+
+export interface QueryIntentClassification {
+  intent: QueryIntentType;
+  confidence: number;
+  entities: ExtractedQueryEntities;
+  semanticSearchText: string;
+  reasoning: string;
+}
+
+export interface SemanticCaseSearchResult {
+  id: string;
+  firNumber: string;
+  crimeCategory: string;
+  policeStation: string;
+  district: string;
+  priority: string;
+  status: string;
+  incidentDate: string;
+  description: string;
+  descriptionKannada?: string | null;
+  similarityScore: number; // 0.0 - 1.0 (cosine similarity)
+  accusedNames: string[];
+}
+

@@ -4,6 +4,7 @@ import { curatedCrimeDataset } from '@kestrel/shared';
 import { sql } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs';
+import { seedEmbeddings } from '../scripts/seedEmbeddings';
 
 interface OfficerSeed {
   id: string;
@@ -215,6 +216,10 @@ export async function runSeed() {
   }
   console.log(`✓ Inserted ${evidenceCount} evidence vault records.`);
 
+  // 6. Vector Embeddings Seeding for pgvector
+  console.log('\n[6/6] Populating 1536-dim semantic embeddings for pgvector...');
+  await seedEmbeddings();
+
   console.log(`\n======================================================`);
   console.log(`[Seed Runner] Verification Summary:`);
   console.log(`  - Officers:  ${DEFAULT_OFFICERS.length}`);
@@ -222,6 +227,7 @@ export async function runSeed() {
   console.log(`  - FIR Cases: ${casesCount}`);
   console.log(`  - Junctions: ${junctionCount}`);
   console.log(`  - Evidence:  ${evidenceCount}`);
+  console.log(`  - Embeddings: 1536-dim pgvector HNSW indexed`);
   console.log(`[Seed Runner] Complete! Database is populated and operational.`);
   console.log(`======================================================\n`);
 }

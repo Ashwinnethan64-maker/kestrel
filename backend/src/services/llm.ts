@@ -1,10 +1,10 @@
 import Groq from 'groq-sdk';
 import { config } from '../config';
 
-let groqClient: Groq | null = null;
+export let groqClient: Groq | null = null;
 
 // Multi-Model Quota Pool: Automatically fails over across models if one encounters rate limits
-const CANDIDATE_MODELS = [
+export const CANDIDATE_MODELS = [
   process.env.GROQ_MODEL || 'qwen/qwen3.8-27b',
   'openai/gpt-oss-120b',
   'openai/gpt-oss-20b'

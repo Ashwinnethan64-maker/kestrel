@@ -11,7 +11,9 @@ import {
   SpatioTemporalDensityResponse,
   NetworkRole,
   SuspectCentralityMetrics,
-  NetworkCentralityResponse
+  NetworkCentralityResponse,
+  QueryIntentClassification,
+  SemanticCaseSearchResult
 } from '@kestrel/shared';
 
 export class MockIntelClient {
@@ -308,6 +310,70 @@ export class MockIntelClient {
       success: !!found,
       data: { ...found, networkRank: index >= 0 ? index + 1 : 1 },
       meta: { timestamp: new Date().toISOString() }
+    };
+  }
+
+  async classifyIntent(query: string, context?: Record<string, unknown>): Promise<ApiResponse<QueryIntentClassification>> {
+    const lower = query.toLowerCase();
+    let station: string | undefined;
+    if (lower.includes('indiranagar')) station = 'Indiranagar';
+    else if (lower.includes('koramangala')) station = 'Koramangala';
+    else if (lower.includes('whitefield')) station = 'Whitefield';
+
+    let category: string | undefined;
+    if (lower.includes('robbery')) category = 'Armed Robbery';
+    else if (lower.includes('theft')) category = 'Vehicle Theft';
+    else if (lower.includes('snatching')) category = 'Chain Snatching';
+
+    const isNarrative = lower.includes('crowbar') || lower.includes('shutter') || lower.includes('bike') || query.split(/\s+/).length > 6;
+    const hasFilters = Boolean(station || category);
+
+    return {
+      success: true,
+      data: {
+        intent: hasFilters && isNarrative ? 'HYBRID' : isNarrative ? 'SEMANTIC_VECTOR' : 'STRUCTURED_SQL',
+        confidence: 0.92,
+        entities: { policeStation: station, crimeCategory: category },
+        semanticSearchText: query,
+        reasoning: 'Classified in mock service'
+      },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
+
+  async searchCasesBySemanticMO(query: string, limit: number = 5): Promise<ApiResponse<SemanticCaseSearchResult[]>> {
+    const lower = query.toLowerCase();
+    const words = lower.split(/\s+/).filter(w => w.length > 2);
+
+    const scored = this.cases.map(c => {
+      let score = 0.5;
+      const desc = (c.description || '').toLowerCase();
+      for (const w of words) {
+        if (desc.includes(w)) score += 0.15;
+      }
+      return {
+        id: c.id,
+        firNumber: c.firNumber,
+        crimeCategory: c.crimeCategory,
+        policeStation: c.policeStation,
+        district: c.district,
+        priority: c.priority,
+        status: c.status,
+        incidentDate: c.incidentDate,
+        description: c.description,
+        descriptionKannada: c.descriptionKannada || null,
+        similarityScore: Math.min(0.98, Math.round(score * 100) / 100),
+        accusedNames: []
+      };
+    });
+
+    scored.sort((a, b) => b.similarityScore - a.similarityScore);
+    const results = scored.slice(0, limit);
+
+    return {
+      success: true,
+      data: results,
+      meta: { total: results.length, timestamp: new Date().toISOString() }
     };
   }
 }

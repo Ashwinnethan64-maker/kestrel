@@ -275,8 +275,8 @@ gantt
 - [x] **Sub-task 2.2B.2**: Calculate suspect centrality (degree/PageRank), network roles (Kingpin/Broker/Enforcer/Associate), and dynamic recidivism risk scores (`GET /api/network/centrality` & `GET /api/network/accused/:id/metrics`).
 
 ##### Task 2.3B: Hybrid RAG Pipeline (Deterministic SQL + Semantic Search)
-- [ ] **Sub-task 2.3B.1**: Build Intent Classifier parsing officer queries into structured SQL filters vs narrative searches.
-- [ ] **Sub-task 2.3B.2**: Implement pgvector cosine similarity search on modus operandi and witness statements.
+- [x] **Sub-task 2.3B.1**: Build Intent Classifier parsing officer queries into structured SQL filters vs narrative searches (`POST /api/copilot/intent`).
+- [x] **Sub-task 2.3B.2**: Implement pgvector cosine similarity search on modus operandi and witness statements (`POST /api/copilot/semantic-search` & `POST /api/copilot/query`).
 - [x] **Sub-task 2.3B.3**: Construct zero-hallucination prompt template enforcing citation of actual FIR numbers from database context.
 - [x] **Sub-task 2.3B.4**: Implement Kannada prompt translation and system persona for regional language output.
 
