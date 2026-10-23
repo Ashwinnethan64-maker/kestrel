@@ -1,6 +1,5 @@
 import {
   pgTable,
-  uuid,
   varchar,
   text,
   timestamp,
@@ -29,7 +28,7 @@ const vector = customType<{ data: number[] }>({
 
 // 1. Officers Table
 export const officers = pgTable('officers', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: varchar('id', { length: 100 }).primaryKey(),
   badgeNumber: varchar('badge_number', { length: 50 }).notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
@@ -43,7 +42,7 @@ export const officers = pgTable('officers', {
 export const casesFir = pgTable(
   'cases_fir',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
+    id: varchar('id', { length: 100 }).primaryKey(),
     firNumber: varchar('fir_number', { length: 100 }).notNull().unique(),
     crimeCategory: varchar('crime_category', { length: 100 }).notNull(),
     priority: varchar('priority', { length: 50 }).default('Medium'),
@@ -52,7 +51,7 @@ export const casesFir = pgTable(
     reportedDate: timestamp('reported_date', { withTimezone: true }).defaultNow(),
     district: varchar('district', { length: 100 }).notNull(),
     policeStation: varchar('police_station', { length: 100 }).notNull(),
-    investigatingOfficerId: uuid('investigating_officer_id').references(() => officers.id),
+    investigatingOfficerId: varchar('investigating_officer_id', { length: 100 }).references(() => officers.id),
     description: text('description').notNull(),
     descriptionKannada: text('description_kannada'),
     applicableActs: jsonb('applicable_acts').default([]),
@@ -75,7 +74,7 @@ export const casesFir = pgTable(
 
 // 3. Accused & Suspect Entities Table
 export const entitiesAccused = pgTable('entities_accused', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: varchar('id', { length: 100 }).primaryKey(),
   fullName: varchar('full_name', { length: 255 }).notNull(),
   aliases: jsonb('aliases').default([]),
   isRepeatOffender: boolean('is_repeat_offender').default(false),
@@ -93,9 +92,9 @@ export const entitiesAccused = pgTable('entities_accused', {
 export const caseAccusedJunction = pgTable(
   'case_accused_junction',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    caseId: uuid('case_id').notNull().references(() => casesFir.id, { onDelete: 'cascade' }),
-    accusedId: uuid('accused_id').notNull().references(() => entitiesAccused.id, { onDelete: 'cascade' }),
+    id: varchar('id', { length: 100 }).primaryKey(),
+    caseId: varchar('case_id', { length: 100 }).notNull().references(() => casesFir.id, { onDelete: 'cascade' }),
+    accusedId: varchar('accused_id', { length: 100 }).notNull().references(() => entitiesAccused.id, { onDelete: 'cascade' }),
     role: varchar('role', { length: 100 }).default('Prime Suspect'),
     status: varchar('status', { length: 50 }).default('Wanted')
   },
@@ -106,8 +105,8 @@ export const caseAccusedJunction = pgTable(
 
 // 5. Evidence Vault Table
 export const caseEvidence = pgTable('case_evidence', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  caseId: uuid('case_id').notNull().references(() => casesFir.id, { onDelete: 'cascade' }),
+  id: varchar('id', { length: 100 }).primaryKey(),
+  caseId: varchar('case_id', { length: 100 }).notNull().references(() => casesFir.id, { onDelete: 'cascade' }),
   evidenceType: varchar('evidence_type', { length: 100 }).notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description').notNull(),
@@ -118,8 +117,8 @@ export const caseEvidence = pgTable('case_evidence', {
 
 // 6. AI Conversation Threads Table
 export const aiThreads = pgTable('ai_threads', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  officerId: uuid('officer_id').references(() => officers.id),
+  id: varchar('id', { length: 100 }).primaryKey(),
+  officerId: varchar('officer_id', { length: 100 }).references(() => officers.id),
   title: varchar('title', { length: 255 }).notNull(),
   messages: jsonb('messages').default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),

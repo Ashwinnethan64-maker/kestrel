@@ -34,4 +34,9 @@
     - Verified and enabled `postgis 3.3.7`, `vector 0.8.0`, `uuid-ossp 1.1`, and `pg_trgm 1.6`.
     - Defined schema with 6 tables (`officers`, `cases_fir`, `entities_accused`, `case_accused_junction`, `case_evidence`, `ai_threads`), GIST index on `location_geom`, GIN index on `(fir_number, description)` with `gin_trgm_ops`, and unique compound index on `(case_id, accused_id)`.
     - Configured `drizzle.config.ts`, `backend/src/db/index.ts`, and pushed schema with `drizzle-kit push`.
+  - **Task 1.2B: Database Seeding Engine** (Complete — 2026-10-23):
+    - Implemented `backend/src/db/seed.ts` supporting both Tier 1 Curated and Tier 2 Large Parametric dataset ingestion.
+    - Successfully seeded 5 officers, 360 accused suspects, 1,507 FIR cases with WGS84 PostGIS geometry points (`ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)`), 2,656 co-accused junction links, and 8 evidence items.
+    - Verified relational integrity, spatial distance calculation (`ST_Distance`), and GIN trigram text search.
+
 
