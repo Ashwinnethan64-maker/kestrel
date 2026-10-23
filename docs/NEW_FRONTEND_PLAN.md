@@ -174,16 +174,16 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
 ### Phase 5: Ambient AI Copilot & Pinned Active Caseboard
 *Priority: Critical | Goal: Real-time intelligence stream, bilingual capability, and 1-click court brief generation.*
 
-- [ ] **Task 5.1: Persistent Ambient Copilot (`AmbientCopilot.tsx`)**
-  - [ ] **Sub-task 5.1.1**: Create `frontend/src/components/deck/AmbientCopilot.tsx` occupying persistent 35% right-hand rail with dynamic prompt envelope from store.
-  - [ ] **Sub-task 5.1.2**: Implement Live SSE Streaming Reader connecting to `POST /api/copilot/query` and rendering token-by-token streaming markdown.
-  - [ ] **Sub-task 5.1.3**: Surface Proactive Threat Flash Banners when viewing cases or suspects (e.g. MO matching with Indiranagar burglary).
-  - [ ] **Sub-task 5.1.4**: Render contextual action chips (`[ ⚡ Draft Bail Opposition Brief ]`, `[ 🔎 Spot Witness Inconsistencies ]`, `[ 🗣️ ಕನ್ನಡದಲ್ಲಿ ಸಾರಾಂಶ ]`).
-  - [ ] **Sub-task 5.1.5**: Render clickable FIR citation pills linking directly into the 360° Case Nexus.
+- [x] **Task 5.1: Persistent Ambient Copilot (`AmbientCopilot.tsx`)**
+  - [x] **Sub-task 5.1.1**: Create `frontend/src/components/deck/AmbientCopilot.tsx` occupying persistent 35% right-hand rail with dynamic prompt envelope from store.
+  - [x] **Sub-task 5.1.2**: Implement Live SSE Streaming Reader connecting to `POST /api/copilot/query` and rendering token-by-token streaming markdown.
+  - [x] **Sub-task 5.1.3**: Surface Proactive Threat Flash Banners when viewing cases or suspects (e.g. MO matching with Indiranagar burglary).
+  - [x] **Sub-task 5.1.4**: Render contextual action chips (`[ ⚡ Draft Bail Opposition Brief ]`, `[ 🔎 Spot Witness Inconsistencies ]`, `[ 🗣️ ಕನ್ನಡದಲ್ಲಿ ಸಾರಾಂಶ ]`).
+  - [x] **Sub-task 5.1.5**: Render clickable FIR citation pills linking directly into the 360° Case Nexus.
 
-- [ ] **Task 5.2: Active Caseboard & 1-Click Court Briefing PDF (`ActiveCaseboard.tsx`)**
-  - [ ] **Sub-task 5.2.1**: Create `frontend/src/components/deck/ActiveCaseboard.tsx` as a collapsible tray holding pinned clues, suspect profiles, and evidence cards.
-  - [ ] **Sub-task 5.2.2**: Implement client-side Classified PDF Dossier Generator with Karnataka State Police crest, watermark, and court-ready layout in < 2 seconds.
+- [x] **Task 5.2: Active Caseboard & 1-Click Court Briefing PDF (`ActiveCaseboard.tsx`)**
+  - [x] **Sub-task 5.2.1**: Create `frontend/src/components/deck/ActiveCaseboard.tsx` as a collapsible tray holding pinned clues, suspect profiles, and evidence cards.
+  - [x] **Sub-task 5.2.2**: Implement client-side Classified PDF Dossier Generator with Karnataka State Police crest, watermark, and court-ready layout in < 2 seconds.
 
 ---
 

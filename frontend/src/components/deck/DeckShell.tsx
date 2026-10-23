@@ -20,6 +20,7 @@ import { useKeyboardBus } from '@/hooks/useKeyboardBus';
 import { DocketLens } from '../docket/DocketLens';
 import { CaseNexusLens } from '../lenses/CaseNexusLens';
 import { ZonalStrategicLens } from '../zonal/ZonalStrategicLens';
+import { AmbientCopilot } from '../copilot/AmbientCopilot';
 
 // ── Lens mode tab definitions ─────────────────────────────────────────────────
 const LENS_TABS: { mode: DeckLensMode; label: string; icon: React.ReactNode; shortcut: string }[] = [
@@ -370,8 +371,8 @@ export function DeckShell() {
         </main>
 
         {/* Ambient Copilot Rail */}
-        <aside className="flex-[35] min-w-0 bg-deck-surface/40 border-l border-white/5" role="complementary">
-          <CopilotRailPlaceholder />
+        <aside className="flex-[35] min-w-0 bg-deck-surface/40 border-l border-white/5 flex flex-col h-full" role="complementary">
+          <AmbientCopilot />
         </aside>
       </div>
 

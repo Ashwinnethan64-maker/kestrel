@@ -149,10 +149,31 @@ const MOCK_COPILOT_RESPONSES: Record<string, string[]> = {
     'Stay tactical. ', '— KESTREL Copilot'
   ],
   default_kn: [
-    'ಕೆಸ್ಟ್ರೆಲ್ ಡೇಟಾಬೇಸ್‌ನಲ್ಲಿರುವ ', 'ಗುಪ್ತಚರ ಮಾಹಿತಿ ', 'ಆಧಾರದ ಮೇಲೆ:\n\n',
-    'FIR-2024-INDR-0102 ', '(ಸಶಸ್ತ್ರ ದರೋಡೆ) ', 'ಅತ್ಯಂತ ಮಹತ್ವದ ', 'ಪ್ರಕರಣವಾಗಿದೆ. ', 'ರಾಜು \'ಸ್ನೇಕ್\' ನಾಯಕ್ ', 'ಮುಖ್ಯ ಆರೋಪಿ.\n\n',
-    'ತ್ವರಿತ ಕ್ರಮಗಳು:\n', '1. FSL ಬ್ಯಾಲಿಸ್ಟಿಕ್ಸ್\n', '2. CDR ಟವರ್ ಡಂಪ್\n', '3. ಸಾಕ್ಷಿ ಹೇಳಿಕೆ\n\n',
-    '— KESTREL ಸಹಾಯಕ'
+    'ಕೆಸ್ಟ್ರೆಲ್ ಗುಪ್ತಚರ ಮಾಹಿತಿ ', 'ವಿಶ್ಲೇಷಣೆಯಂತೆ:\n\n',
+    '**FIR-2024-INDR-0102** ', '(ಸಶಸ್ತ್ರ ದರೋಡೆ) ', 'ಪ್ರಕರಣದಲ್ಲಿ ಆರೋಪಿ ರಾಜು ನಾಯಕ್ ', 'ಹಿಂದಿನ 6 ಪ್ರಕರಣಗಳಲ್ಲಿ ಭಾಗಿಯಾಗಿದ್ದಾನೆ.\n\n',
+    'ಪ್ರಮುಖ ಕ್ರಮಗಳು:\n', '1. **BNSS ಸೆಕ್ಷನ್ 480** ರ ಅಡಿಯಲ್ಲಿ ಜಾಮೀನು ವಿರೋಧಿಸುವುದು.\n', '2. ಮಡಿವಾಳ FSL ಬ್ಯಾಲಿಸ್ಟಿಕ್ಸ್ ವರದಿ ಪಡೆಯುವುದು.\n', '3. ಕಾಲ್ ಡಂಪ್ ದಾಖಲೆಗಳ ಪರಿಶೀಲನೆ.\n\n',
+    '— ಕೆಸ್ಟ್ರೆಲ್ ಪೊಲೀಸ್ ಸಹಾಯಕ'
+  ],
+  bail_opposition: [
+    '### GROUNDS FOR OPPOSING REGULAR BAIL\n',
+    '**Under Section 480 Bharatiya Nagarik Suraksha Sanhita (BNSS 2023) / Sec 437 CrPC**\n\n',
+    '1. **Recidivism Risk & Habitual Offender Profile**:\n',
+    '   - Accused **Raju Nayak @ Snake Raju** has 6 prior recorded arrests across Indiranagar, K.R. Puram, and Koramangala PS.\n',
+    '   - Active syndicate leader of the *East Ring Vehicle & Heist Syndicate*.\n\n',
+    '2. **Witness Intimidation & Flight Risk**:\n',
+    '   - Complainant Smt. Jayalakshmi has identified the accused in the spot memo.\n',
+    '   - Previous absconding record under Section 84 BNSS in Koramangala jewelry case.\n\n',
+    '3. **Heinous Gravity & Statutory Limits**:\n',
+    '   - Offence committed with country-made firearm under Section 311 / 109 BNS (punishable up to Life Imprisonment).\n',
+    '   - Statutory charge-sheet is within the 90-day period under Section 187 BNSS (elapsed: 42 days).\n\n',
+    '**Conclusion**: Bail may strictly be rejected in the interest of public safety and recovery of remaining stolen bullion.'
+  ],
+  witness_inconsistencies: [
+    '### WITNESS & EVIDENCE INCONSISTENCY ANALYSIS\n',
+    '**Cross-referencing FIR-2024-INDR-0102 Statements**:\n\n',
+    '- **Timestamp Discrepancy**: Complainant statement states robbery occurred at **22:15 hrs**. However, Axis Bank ATM CCTV (EV-001) logs getaway vehicle departure at **21:52 hrs** (23-minute discrepancy).\n',
+    '- **Weapon Description**: Eyewitness mentioned a "silver revolver", whereas recovered shell casings (EV-002) are 7.65mm semi-automatic pistol rounds.\n',
+    '- **Recommended Follow-up**: Re-examine complainant under Section 180(3) BNSS regarding exact sequence of entry and exit.'
   ]
 };
 
@@ -162,9 +183,16 @@ function simulateStream(
   handlers: SSEHandlers
 ): AbortController {
   const controller = new AbortController();
-  const tokens = MOCK_COPILOT_RESPONSES[
-    envelope.language === 'kn' ? 'default_kn' : 'default_en'
-  ];
+  const q = envelope.query.toLowerCase();
+
+  let tokens = MOCK_COPILOT_RESPONSES.default_en;
+  if (envelope.language === 'kn' || q.includes('kannada') || q.includes('ಕನ್ನಡ')) {
+    tokens = MOCK_COPILOT_RESPONSES.default_kn;
+  } else if (q.includes('bail') || q.includes('oppose')) {
+    tokens = MOCK_COPILOT_RESPONSES.bail_opposition;
+  } else if (q.includes('witness') || q.includes('inconsist') || q.includes('discrepanc')) {
+    tokens = MOCK_COPILOT_RESPONSES.witness_inconsistencies;
+  }
 
   let idx = 0;
   const interval = setInterval(() => {
