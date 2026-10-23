@@ -1,0 +1,1 @@
+export { useIntelClient } from './useIntelClient';

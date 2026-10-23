@@ -2,6 +2,7 @@ import type {
   ApiResponse,
   FIRCase,
   AccusedSuspect,
+  CaseEvidence,
   InvestigativeTask,
   OfficerWithWorkload,
   CopilotPromptEnvelope,
@@ -96,6 +97,14 @@ export const liveClient = {
   /** GET /api/accused/:id */
   getAccused: (id: string): Promise<AccusedSuspect | null> =>
     apiFetch<AccusedSuspect>(`/accused/${encodeURIComponent(id)}`).catch(() => null),
+
+  /** GET /api/accused — full accused roster */
+  getSuspects: (): Promise<AccusedSuspect[]> =>
+    apiFetch<AccusedSuspect[]>('/accused'),
+
+  /** GET /api/evidence?caseId=... */
+  getEvidence: (caseId: string): Promise<CaseEvidence[]> =>
+    apiFetch<CaseEvidence[]>(`/evidence?caseId=${encodeURIComponent(caseId)}`).catch(() => []),
 
   /**
    * POST /api/copilot/query — SSE streaming Copilot query.

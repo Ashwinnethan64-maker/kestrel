@@ -129,27 +129,27 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
 ### Phase 3: The 360° Case Nexus Workbench
 *Priority: Critical (The Core Demo Centerpiece) | Goal: All case intelligence on one surface without page reloads.*
 
-- [ ] **Task 3.1: Case Nexus Header & Sub-Lens Navigation (`CaseNexusLens.tsx`)**
-  - [ ] **Sub-task 3.1.1**: Create `frontend/src/components/lenses/CaseNexusLens.tsx` with sticky action header (Back button, FIR badge, statutory acts, priority badge, IO name, Pin button, Court Brief button).
-  - [ ] **Sub-task 3.1.2**: Implement seamless Sub-Lens Navigation Tabs (`[ 📄 Dossier & Evidence ]`, `[ 🗺️ Crime Scene GIS ]`, `[ 🕸️ Syndicate Network ]`) with `Alt+1`, `Alt+2`, `Alt+3` shortcuts.
+- [x] **Task 3.1: Case Nexus Header & Sub-Lens Navigation (`CaseNexusLens.tsx`)**
+  - [x] **Sub-task 3.1.1**: Create `frontend/src/components/lenses/CaseNexusLens.tsx` with sticky action header (Back button, FIR badge, statutory acts, priority badge, IO name, Pin button, Court Brief button).
+  - [x] **Sub-task 3.1.2**: Implement seamless Sub-Lens Navigation Tabs (`[ 📄 Dossier & Evidence ]`, `[ 🗺️ Crime Scene GIS ]`, `[ 🕸️ Syndicate Network ]`) with `Alt+1`, `Alt+2`, `Alt+3` shortcuts.
 
-- [ ] **Task 3.2: Sub-Lens 1 — Dossier & Evidence Vault (`CaseDossierSubLens.tsx`)**
-  - [ ] **Sub-task 3.2.1**: Create `CaseDossierSubLens.tsx` rendering case synopsis, complainant details, and applicable IPC/BNS statutory acts.
-  - [ ] **Sub-task 3.2.2**: Build Accused Suspect Profile Cards with aliases, prior arrest counters, and bail status tags.
-  - [ ] **Sub-task 3.2.3**: Build Evidence Vault Grid with seized weapon cards, CCTV timestamp logs, and chain-of-custody status.
-  - [ ] **Sub-task 3.2.4**: Embed Case Action Checklist with interactive checkboxes linked to this FIR's tasks.
+- [x] **Task 3.2: Sub-Lens 1 — Dossier & Evidence Vault (`CaseDossierSubLens.tsx`)**
+  - [x] **Sub-task 3.2.1**: Create `CaseDossierSubLens.tsx` rendering case synopsis, complainant details, and applicable IPC/BNS statutory acts.
+  - [x] **Sub-task 3.2.2**: Build Accused Suspect Profile Cards with aliases, prior arrest counters, and bail status tags.
+  - [x] **Sub-task 3.2.3**: Build Evidence Vault Grid with seized weapon cards, CCTV timestamp logs, and chain-of-custody status.
+  - [x] **Sub-task 3.2.4**: Embed Case Action Checklist with interactive checkboxes linked to this FIR's tasks.
 
-- [ ] **Task 3.3: Sub-Lens 2 — Crime Scene Spatial GIS (`CaseGisSubLens.tsx`)**
-  - [ ] **Sub-task 3.3.1**: Create `CaseGisSubLens.tsx` wrapping Leaflet with dark CartoDB basemap auto-centering smoothly on the FIR crime scene coordinates.
-  - [ ] **Sub-task 3.3.2**: Render custom radar pulse beacon marking the exact scene of offence.
-  - [ ] **Sub-task 3.3.3**: Render 500m & 1km tactical radius circles showing geo-tagged residences of known local suspects, station CCTV cameras, and patrol beat routes.
-  - [ ] **Sub-task 3.3.4**: Implement interactive POI popup cards displaying distance from crime scene (`"Resides 850m away"`).
+- [x] **Task 3.3: Sub-Lens 2 — Crime Scene Spatial GIS (`CaseGisSubLens.tsx`)**
+  - [x] **Sub-task 3.3.1**: Create `CaseGisSubLens.tsx` wrapping Leaflet with dark CartoDB basemap auto-centering smoothly on the FIR crime scene coordinates.
+  - [x] **Sub-task 3.3.2**: Render custom radar pulse beacon marking the exact scene of offence.
+  - [x] **Sub-task 3.3.3**: Render 500m & 1km tactical radius circles showing geo-tagged residences of known local suspects, station CCTV cameras, and patrol beat routes.
+  - [x] **Sub-task 3.3.4**: Implement interactive POI popup cards displaying distance from crime scene (`"Resides 850m away"`).
 
-- [ ] **Task 3.4: Sub-Lens 3 — Syndicate Relational Graph (`CaseNetworkSubLens.tsx`)**
-  - [ ] **Sub-task 3.4.1**: Create `CaseNetworkSubLens.tsx` wrapping `@xyflow/react` auto-generating an Ego-Network centered on the case's accused.
-  - [ ] **Sub-task 3.4.2**: Render custom tactical nodes (Prime Suspect with crimson risk glow, Co-Accused with prior conviction badges, Receiver / Pawnbroker).
-  - [ ] **Sub-task 3.4.3**: Render visual relationship edges with weight tags (`CO_ACCUSED_WITH`, `CALL_LOG_CONTACT`).
-  - [ ] **Sub-task 3.4.4**: Implement node click inspection loading the suspect's criminal record into Ambient Copilot.
+- [x] **Task 3.4: Sub-Lens 3 — Syndicate Relational Graph (`CaseNetworkSubLens.tsx`)**
+  - [x] **Sub-task 3.4.1**: Create `CaseNetworkSubLens.tsx` wrapping `@xyflow/react` auto-generating an Ego-Network centered on the case's accused.
+  - [x] **Sub-task 3.4.2**: Render custom tactical nodes (Prime Suspect with crimson risk glow, Co-Accused with prior conviction badges, Receiver / Pawnbroker).
+  - [x] **Sub-task 3.4.3**: Render visual relationship edges with weight tags (`CO_ACCUSED_WITH`, `CALL_LOG_CONTACT`).
+  - [x] **Sub-task 3.4.4**: Implement node click inspection loading the suspect's criminal record into Ambient Copilot.
 
 ---
 

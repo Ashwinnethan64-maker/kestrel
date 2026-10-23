@@ -8,6 +8,7 @@ import { curatedCrimeDataset } from '@kestrel/shared';
 import type {
   FIRCase,
   AccusedSuspect,
+  CaseEvidence,
   InvestigativeTask,
   OfficerWithWorkload,
   CopilotPromptEnvelope,
@@ -106,6 +107,18 @@ const MOCK_ACCUSED: AccusedSuspect[] = (raw.suspects || []).map((s: any): Accuse
   photoUrl: s.photoUrl,
   activeCaseIds: s.activeCaseIds || [],
   createdAt: s.createdAt || new Date().toISOString()
+}));
+
+// ── Build CaseEvidence list from curated fixture ──────────────────────────────
+const MOCK_EVIDENCE: CaseEvidence[] = (raw.evidence || []).map((e: any): CaseEvidence => ({
+  id: e.id,
+  caseId: e.caseId,
+  evidenceType: e.evidenceType,
+  title: e.title,
+  description: e.description,
+  fileUrl: e.fileUrl,
+  collectedDate: e.collectedDate,
+  chainOfCustody: e.chainOfCustody || []
 }));
 
 // ── In-memory tasks (mutable for updateTaskStatus) ────────────────────────────
@@ -258,6 +271,12 @@ export const mockClient = {
     const s = MOCK_ACCUSED.find(x => x.id === id) ?? null;
     return Promise.resolve(s);
   },
+
+  getSuspects: (): Promise<AccusedSuspect[]> =>
+    Promise.resolve([...MOCK_ACCUSED]),
+
+  getEvidence: (caseId: string): Promise<CaseEvidence[]> =>
+    Promise.resolve(MOCK_EVIDENCE.filter(e => e.caseId === caseId)),
 
   streamCopilotQuery: (
     envelope: CopilotPromptEnvelope,

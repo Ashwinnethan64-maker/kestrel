@@ -14,7 +14,7 @@ import type { AccusedSuspect, FIRCase } from '@kestrel/shared';
 
 export function DocketLens() {
   const activeOfficerId = useCommandDeckStore((s) => s.activeOfficerId);
-  const activeOfficer = useCommandDeckStore((s) => s.activeOfficer);
+  const activeStation = useCommandDeckStore((s) => s.activeStation);
   const openCaseNexus = useCommandDeckStore((s) => s.openCaseNexus);
   const altitude = useCommandDeckStore((s) => s.altitude);
 
@@ -138,7 +138,7 @@ export function DocketLens() {
               <span>
                 {greeting},{' '}
                 <span className="text-cyan-400">
-                  {activeOfficer?.name || (altitude === 'commander' ? 'DCP Ramesh' : 'Inspector Patil')}
+                  {altitude === 'commander' ? 'DCP Ramesh' : 'Inspector Patil'}
                 </span>
               </span>
             </h1>
@@ -146,7 +146,7 @@ export function DocketLens() {
             <p className="text-xs text-slate-400 mt-0.5">
               Station:{' '}
               <span className="text-slate-300 font-medium">
-                {activeOfficer?.station || (altitude === 'commander' ? 'Bengaluru Central Command' : 'Indiranagar PS')}
+                {activeStation || (altitude === 'commander' ? 'Bengaluru Central Command' : 'Indiranagar PS')}
               </span>
               <span className="mx-2 text-slate-600">|</span>
               Active Docket Cases: <span className="text-cyan-400 font-semibold">{cases.length}</span>
@@ -310,7 +310,7 @@ export function DocketLens() {
         <StationGdTicker
           cases={cases}
           suspects={suspects}
-          station={activeOfficer?.station}
+          station={activeStation}
         />
       </div>
     </div>

@@ -142,12 +142,12 @@ function deriveGdEvents(cases: FIRCase[], suspects: AccusedSuspect[]): GdEvent[]
       });
     }
 
-    if (s.bailStatus === 'Arrested') {
+    if (s.bailStatus === 'Remanded') {
       events.push({
         id: `gd-arrest-${s.id}`,
         timestamp: new Date(Date.now() - Math.random() * 72 * 60 * 60 * 1000).toISOString(),
         eventType: 'ARREST_MADE',
-        title: `Arrested — ${s.fullName}`,
+        title: `Remanded to Custody — ${s.fullName}`,
         detail: s.gangAffiliation ? `Gang: ${s.gangAffiliation}` : undefined,
         severity: s.riskLevel === 'Critical' ? 'Critical' : 'High',
       });
