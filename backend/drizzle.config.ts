@@ -11,7 +11,8 @@ export default defineConfig({
     'entities_accused',
     'case_accused_junction',
     'case_evidence',
-    'ai_threads'
+    'ai_threads',
+    'investigative_tasks'
   ],
   dbCredentials: {
     url: config.databaseUrl

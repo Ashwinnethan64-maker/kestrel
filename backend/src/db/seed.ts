@@ -1,5 +1,5 @@
 import { db } from './index';
-import { officers, casesFir, entitiesAccused, caseAccusedJunction, caseEvidence } from './schema';
+import { officers, casesFir, entitiesAccused, caseAccusedJunction, caseEvidence, investigativeTasks } from './schema';
 import { curatedCrimeDataset } from '@kestrel/shared';
 import { sql } from 'drizzle-orm';
 import path from 'path';
@@ -64,6 +64,193 @@ const DEFAULT_OFFICERS: OfficerSeed[] = [
   }
 ];
 
+interface InvestigativeTaskSeed {
+  id: string;
+  caseId: string;
+  assignedOfficerId: string;
+  title: string;
+  taskType: 'CCTV' | 'Forensic' | 'Interrogation' | 'Seizure' | 'Documentation';
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: 'Pending' | 'In Progress' | 'Completed';
+  dueDate: string;
+  completedAt?: string;
+  notes?: string;
+}
+
+const SEED_TASKS: InvestigativeTaskSeed[] = [
+  {
+    id: 'TASK-001',
+    caseId: 'CASE-2024-INDR-0102',
+    assignedOfficerId: 'OFF-01',
+    title: 'Obtain 12th Main Indiranagar CCTV footage from Axis Bank ATM',
+    taskType: 'CCTV',
+    priority: 'Critical',
+    status: 'Completed',
+    dueDate: '2024-03-16T12:00:00Z',
+    completedAt: '2024-03-16T10:45:00Z',
+    notes: 'Footage collected on USB drive and tagged as evidence EV-001.'
+  },
+  {
+    id: 'TASK-002',
+    caseId: 'CASE-2024-INDR-0102',
+    assignedOfficerId: 'OFF-01',
+    title: 'Dispatch seized 7.65mm shell casings to Madiwala FSL Ballistics Division',
+    taskType: 'Forensic',
+    priority: 'Critical',
+    status: 'In Progress',
+    dueDate: '2024-03-18T18:00:00Z',
+    notes: 'Awaiting preliminary ballistic comparison with country pistol seized in Whitefield case.'
+  },
+  {
+    id: 'TASK-003',
+    caseId: 'CASE-2024-INDR-0102',
+    assignedOfficerId: 'OFF-01',
+    title: 'Record Section 180 BNSS statement of eyewitness Smt. Jayalakshmi',
+    taskType: 'Documentation',
+    priority: 'High',
+    status: 'Pending',
+    dueDate: '2024-03-19T14:00:00Z',
+    notes: 'Witness scheduled to appear at Indiranagar PS at 11:00 AM.'
+  },
+  {
+    id: 'TASK-004',
+    caseId: 'CASE-2024-INDR-0102',
+    assignedOfficerId: 'OFF-01',
+    title: 'Execute formal seizure memo for black Bajaj Pulsar (KA-04-E-1234)',
+    taskType: 'Seizure',
+    priority: 'High',
+    status: 'Completed',
+    dueDate: '2024-03-16T16:00:00Z',
+    completedAt: '2024-03-16T15:30:00Z',
+    notes: 'Vehicle impounded under PF 44/2024 and parked at PS yard.'
+  },
+  {
+    id: 'TASK-005',
+    caseId: 'CASE-2024-INDR-0102',
+    assignedOfficerId: 'OFF-01',
+    title: 'Interrogate co-accused Deepak Kumar @ Bullet Deepu regarding firearm source',
+    taskType: 'Interrogation',
+    priority: 'High',
+    status: 'Pending',
+    dueDate: '2024-03-20T17:00:00Z',
+    notes: 'Focus on supply trail linking country-made pistol to Kalasipalya workshop.'
+  },
+  {
+    id: 'TASK-006',
+    caseId: 'CASE-2024-KRP-0215',
+    assignedOfficerId: 'OFF-02',
+    title: 'Request tower CDR dump for Old Madras Road junction during midnight heist',
+    taskType: 'Forensic',
+    priority: 'Critical',
+    status: 'In Progress',
+    dueDate: '2024-03-21T18:00:00Z',
+    notes: 'Awaiting nodal officer response for Airtel and Jio cell IDs.'
+  },
+  {
+    id: 'TASK-007',
+    caseId: 'CASE-2024-KRP-0215',
+    assignedOfficerId: 'OFF-02',
+    title: 'Raid suspected chop shop in B.Channasandra (Syed Imran residence)',
+    taskType: 'Seizure',
+    priority: 'High',
+    status: 'Pending',
+    dueDate: '2024-03-22T06:00:00Z',
+    notes: 'Search warrant approved by ACMM court.'
+  },
+  {
+    id: 'TASK-008',
+    caseId: 'CASE-2024-KORM-0088',
+    assignedOfficerId: 'OFF-01',
+    title: 'Inspect Ejipura Main Road jewellery store safe for tool-mark forensics',
+    taskType: 'Forensic',
+    priority: 'High',
+    status: 'Completed',
+    dueDate: '2024-03-14T15:00:00Z',
+    completedAt: '2024-03-14T14:10:00Z',
+    notes: 'Gas cutter marks matched industrial acetylene torches.'
+  },
+  {
+    id: 'TASK-009',
+    caseId: 'CASE-2024-KORM-0088',
+    assignedOfficerId: 'OFF-01',
+    title: 'File proclamation warrant under Sec 84 BNSS against Manjunath @ Blade Manja',
+    taskType: 'Documentation',
+    priority: 'Medium',
+    status: 'In Progress',
+    dueDate: '2024-03-23T11:00:00Z',
+    notes: 'Accused absconding from known Ejipura address.'
+  },
+  {
+    id: 'TASK-010',
+    caseId: 'CASE-2024-WF-0301',
+    assignedOfficerId: 'OFF-03',
+    title: 'Trace cryptocurrency wallet transactions to mule bank accounts',
+    taskType: 'Forensic',
+    priority: 'Critical',
+    status: 'In Progress',
+    dueDate: '2024-03-22T19:00:00Z',
+    notes: 'Tether USDT outbound transfers traced to overseas exchanges.'
+  },
+  {
+    id: 'TASK-011',
+    caseId: 'CASE-2024-WF-0301',
+    assignedOfficerId: 'OFF-03',
+    title: 'Summon bank branch manager under 94 BNSS for KYC documents',
+    taskType: 'Documentation',
+    priority: 'High',
+    status: 'Completed',
+    dueDate: '2024-03-17T16:00:00Z',
+    completedAt: '2024-03-17T15:00:00Z',
+    notes: 'KYC verified fraudulent identities with forged Aadhaar cards.'
+  },
+  {
+    id: 'TASK-012',
+    caseId: 'CASE-2024-WF-0301',
+    assignedOfficerId: 'OFF-03',
+    title: 'Execute freeze order under Sec 106 BNSS on 4 mule ICICI accounts',
+    taskType: 'Seizure',
+    priority: 'Critical',
+    status: 'Completed',
+    dueDate: '2024-03-18T10:00:00Z',
+    completedAt: '2024-03-18T09:30:00Z',
+    notes: 'INR 18,50,000 successfully lien-marked.'
+  },
+  {
+    id: 'TASK-013',
+    caseId: 'CASE-2024-CUB-0044',
+    assignedOfficerId: 'OFF-04',
+    title: 'Retrieve Lavelle Road traffic junction PTZ camera recordings',
+    taskType: 'CCTV',
+    priority: 'High',
+    status: 'Completed',
+    dueDate: '2024-03-15T18:00:00Z',
+    completedAt: '2024-03-15T17:20:00Z',
+    notes: 'Getaway vehicle Honda City (KA-03-Z-8899) identified.'
+  },
+  {
+    id: 'TASK-014',
+    caseId: 'CASE-2024-CUB-0044',
+    assignedOfficerId: 'OFF-04',
+    title: 'Conduct interrogation of Kiran Gowda @ Shadow at Central Prison Parappana Agrahara',
+    taskType: 'Interrogation',
+    priority: 'Critical',
+    status: 'In Progress',
+    dueDate: '2024-03-21T15:00:00Z',
+    notes: 'Body warrant obtained from 1st ACMM Court.'
+  },
+  {
+    id: 'TASK-015',
+    caseId: 'CASE-2024-CUB-0044',
+    assignedOfficerId: 'OFF-04',
+    title: 'Draft statutory charge-sheet for Section 305 / 331(4) BNS violations',
+    taskType: 'Documentation',
+    priority: 'Medium',
+    status: 'Pending',
+    dueDate: '2024-03-25T17:00:00Z',
+    notes: 'Review draft with Assistant Public Prosecutor.'
+  }
+];
+
 function getOfficerIdByName(name?: string): string {
   if (!name) return 'OFF-01';
   const found = DEFAULT_OFFICERS.find((o) => o.name.toLowerCase() === name.toLowerCase());
@@ -78,19 +265,19 @@ export async function runSeed() {
   console.log(`======================================================\n`);
 
   // 1. Clear existing seed data safely
-  console.log('[1/6] Purging existing operational data...');
-  await db.execute(sql`TRUNCATE TABLE case_evidence, case_accused_junction, cases_fir, entities_accused, officers CASCADE;`);
+  console.log('[1/7] Purging existing operational data...');
+  await db.execute(sql`TRUNCATE TABLE investigative_tasks, case_evidence, case_accused_junction, cases_fir, entities_accused, officers CASCADE;`);
   console.log('✓ Existing tables truncated successfully.');
 
   // 2. Insert Officers
-  console.log('\n[2/6] Seeding tactical officers roster...');
+  console.log('\n[2/7] Seeding tactical officers roster...');
   for (const officer of DEFAULT_OFFICERS) {
     await db.insert(officers).values(officer);
   }
   console.log(`✓ Inserted ${DEFAULT_OFFICERS.length} officer profiles.`);
 
   // 3. Suspects & Accused Entities (Always include curated, union with large if requested)
-  console.log('\n[3/6] Seeding accused suspect dossiers...');
+  console.log('\n[3/7] Seeding accused suspect dossiers...');
   const suspectMap = new Map<string, any>();
   for (const s of curatedCrimeDataset.suspects || []) {
     suspectMap.set(s.id, s);
@@ -127,7 +314,7 @@ export async function runSeed() {
   console.log(`✓ Inserted ${suspectMap.size} suspect dossiers.`);
 
   // 4. Cases FIR Seeding (Always include curated, union with large if requested)
-  console.log('\n[4/6] Seeding FIR cases with PostGIS spatial coordinates...');
+  console.log('\n[4/7] Seeding FIR cases with PostGIS spatial coordinates...');
   const casesMap = new Map<string, any>();
   for (const c of curatedCrimeDataset.cases || []) {
     casesMap.set(c.id, c);
@@ -173,7 +360,7 @@ export async function runSeed() {
   console.log(`✓ Inserted ${casesCount} FIR cases with PostGIS Point geometries.`);
 
   // 5. Case-Accused Junction Seeding
-  console.log('\n[5/6] Generating co-accused relational junction links...');
+  console.log('\n[5/7] Generating co-accused relational junction links...');
   let junctionCount = 0;
   for (const c of casesMap.values()) {
     const accusedList: string[] = c.accusedIds || [];
@@ -197,7 +384,7 @@ export async function runSeed() {
   console.log(`✓ Linked ${junctionCount} suspect-case junction records.`);
 
   // 6. Evidence Vault Seeding
-  console.log('\n[6/6] Seeding forensic evidence items and chain of custody logs...');
+  console.log('\n[6/7] Seeding forensic evidence items and chain of custody logs...');
   const evidenceList = (curatedCrimeDataset as any).evidence || [];
   let evidenceCount = 0;
   for (const ev of evidenceList) {
@@ -216,8 +403,30 @@ export async function runSeed() {
   }
   console.log(`✓ Inserted ${evidenceCount} evidence vault records.`);
 
-  // 6. Vector Embeddings Seeding for pgvector
-  console.log('\n[6/6] Populating 1536-dim semantic embeddings for pgvector...');
+  // 7. Investigative Tasks Seeding
+  console.log('\n[7/7] Seeding operational investigative tasks for officers...');
+  let taskCount = 0;
+  for (const t of SEED_TASKS) {
+    if (!casesMap.has(t.caseId)) continue;
+    await db.insert(investigativeTasks).values({
+      id: t.id,
+      caseId: t.caseId,
+      assignedOfficerId: t.assignedOfficerId,
+      title: t.title,
+      taskType: t.taskType,
+      priority: t.priority,
+      status: t.status,
+      dueDate: t.dueDate ? new Date(t.dueDate) : null,
+      completedAt: t.completedAt ? new Date(t.completedAt) : null,
+      notes: t.notes || null,
+      createdAt: new Date()
+    });
+    taskCount++;
+  }
+  console.log(`✓ Inserted ${taskCount} operational investigative tasks.`);
+
+  // Vector Embeddings Seeding for pgvector
+  console.log('\nPopulating 1536-dim semantic embeddings for pgvector...');
   await seedEmbeddings();
 
   console.log(`\n======================================================`);
@@ -227,6 +436,7 @@ export async function runSeed() {
   console.log(`  - FIR Cases: ${casesCount}`);
   console.log(`  - Junctions: ${junctionCount}`);
   console.log(`  - Evidence:  ${evidenceCount}`);
+  console.log(`  - Tasks:     ${taskCount}`);
   console.log(`  - Embeddings: 1536-dim pgvector HNSW indexed`);
   console.log(`[Seed Runner] Complete! Database is populated and operational.`);
   console.log(`======================================================\n`);

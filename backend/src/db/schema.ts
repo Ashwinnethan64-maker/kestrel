@@ -124,3 +124,26 @@ export const aiThreads = pgTable('ai_threads', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 });
+
+// 7. Investigative Tasks Table
+export const investigativeTasks = pgTable(
+  'investigative_tasks',
+  {
+    id: varchar('id', { length: 100 }).primaryKey(),
+    caseId: varchar('case_id', { length: 100 }).notNull().references(() => casesFir.id, { onDelete: 'cascade' }),
+    assignedOfficerId: varchar('assigned_officer_id', { length: 100 }).references(() => officers.id, { onDelete: 'set null' }),
+    title: varchar('title', { length: 255 }).notNull(),
+    taskType: varchar('task_type', { length: 100 }).notNull(),
+    priority: varchar('priority', { length: 50 }).default('Medium'),
+    status: varchar('status', { length: 50 }).default('Pending'),
+    dueDate: timestamp('due_date', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
+  },
+  (table) => [
+    index('idx_tasks_officer_status').on(table.assignedOfficerId, table.status),
+    index('idx_tasks_case').on(table.caseId)
+  ]
+);
+

@@ -67,10 +67,10 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
 *Priority: Blocker for State & Services | Team: Cross-Cutting*  
 *Goal: Provide typed officer and task endpoints while preserving 100% of the existing PostGIS and LLM routes.*
 
-- [ ] **Task 0.1: Database Schema Expansion for Investigative Tasks**
-  - [ ] **Sub-task 0.1.1**: Define `investigative_tasks` table in `backend/src/db/schema.ts` (with `id`, `caseId`, `assignedOfficerId`, `title`, `taskType`, `priority`, `status`, `dueDate`, `completedAt`, `notes`, `createdAt`).
-  - [ ] **Sub-task 0.1.2**: Update `backend/src/db/seed.ts` with seeded tasks (15 realistic tasks across curated cases including FIR #102/24 CCTV recovery, ballistics FSL, and 180 BNSS statement).
-  - [ ] **Sub-task 0.1.3**: Push schema to PostgreSQL with `npx drizzle-kit push` and verify database tables.
+- [x] **Task 0.1: Database Schema Expansion for Investigative Tasks**
+  - [x] **Sub-task 0.1.1**: Define `investigative_tasks` table in `backend/src/db/schema.ts` (with `id`, `caseId`, `assignedOfficerId`, `title`, `taskType`, `priority`, `status`, `dueDate`, `completedAt`, `notes`, `createdAt`).
+  - [x] **Sub-task 0.1.2**: Update `backend/src/db/seed.ts` with seeded tasks (15 realistic tasks across curated cases including FIR #102/24 CCTV recovery, ballistics FSL, and 180 BNSS statement).
+  - [x] **Sub-task 0.1.3**: Push schema to PostgreSQL with `npx drizzle-kit push` and verify database tables.
 
 - [ ] **Task 0.2: Backend REST & SSE Endpoints Expansion**
   - [ ] **Sub-task 0.2.1**: Implement `GET /api/officers` in `backend/src/routes/officers.ts` returning the 5 seeded officers joined with active case counts and pending task counts.
