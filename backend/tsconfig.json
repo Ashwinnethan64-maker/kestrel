@@ -8,7 +8,8 @@
     "baseUrl": ".",
     "paths": {
       "@kestrel/shared": ["../packages/shared/src/index.ts"],
-      "@kestrel/shared/*": ["../packages/shared/src/*"]
+      "@kestrel/shared/*": ["../packages/shared/src/*"],
+      "@shared/*": ["../packages/shared/src/*"]
     }
   },
   "include": ["src/**/*"]

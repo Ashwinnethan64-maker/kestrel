@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, FolderGit2, Share2, MapPin, Sparkles, BarChart3, FileText, X } from "lucide-react";
+import { Search, FolderGit2, Share2, MapPin, Sparkles, BarChart3, FileText, Database, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { apiClient } from "@/services/api/client";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface CommandPaletteProps {
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const { isOfflineMode, setOfflineMode, triggerDataRefresh } = useInvestigationContext();
 
   // Listen for Ctrl+K or Cmd+K
   useEffect(() => {
@@ -30,12 +33,25 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   if (!isOpen) return null;
 
   const quickNav = [
-    { label: "Cases & FIR Records", path: "/cases", icon: FolderGit2, hint: "FIR Explorer" },
-    { label: "Entity Network Graph", path: "/network", icon: Share2, hint: "Syndicate Links" },
-    { label: "Geographic Intel Map", path: "/gis", icon: MapPin, hint: "Patrol & Hotspots" },
-    { label: "AI Copilot Analysis", path: "/copilot", icon: Sparkles, hint: "Natural Language RAG" },
-    { label: "Tactical Analytics", path: "/analytics", icon: BarChart3, hint: "KPIs & Trends" },
-    { label: "Intelligence Reports", path: "/reports", icon: FileText, hint: "Classified Dossiers" },
+    { label: "Cases & FIR Records", path: "/cases", icon: FolderGit2, hint: "FIR Explorer", type: "nav" as const },
+    { label: "Entity Network Graph", path: "/network", icon: Share2, hint: "Syndicate Links", type: "nav" as const },
+    { label: "Geographic Intel Map", path: "/gis", icon: MapPin, hint: "Patrol & Hotspots", type: "nav" as const },
+    { label: "AI Copilot Analysis", path: "/copilot", icon: Sparkles, hint: "Natural Language RAG", type: "nav" as const },
+    { label: "Tactical Analytics", path: "/analytics", icon: BarChart3, hint: "KPIs & Trends", type: "nav" as const },
+    { label: "Intelligence Reports", path: "/reports", icon: FileText, hint: "Classified Dossiers", type: "nav" as const },
+    {
+      label: isOfflineMode ? "Switch to Live Backend Mode" : "Switch to Offline Demo Mode (Fail-Safe)",
+      path: "action:toggle-offline",
+      icon: Database,
+      hint: isOfflineMode ? "Connect to live PostgreSQL/PostGIS" : "Zero-network in-memory fixtures",
+      type: "action" as const,
+      onAction: () => {
+        const next = !isOfflineMode;
+        setOfflineMode(next);
+        apiClient.setMode(next ? "mock" : "live");
+        triggerDataRefresh();
+      }
+    }
   ];
 
   const filteredNav = quickNav.filter((n) =>
@@ -43,8 +59,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     n.hint.toLowerCase().includes(query.toLowerCase())
   );
 
-  const handleSelect = (path: string) => {
-    navigate(path);
+  const handleSelect = (item: (typeof quickNav)[0]) => {
+    if (item.type === "action" && item.onAction) {
+      item.onAction();
+    } else if (item.path) {
+      navigate(item.path);
+    }
     onClose();
     setQuery("");
   };
@@ -92,7 +112,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
               return (
                 <button
                   key={item.path}
-                  onClick={() => handleSelect(item.path)}
+                  onClick={() => handleSelect(item)}
                   className="w-full flex items-center justify-between rounded px-3 py-2 text-xs text-left text-foreground hover:bg-surface-elevated hover:text-primary transition-colors group"
                 >
                   <div className="flex items-center gap-2.5">

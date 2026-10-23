@@ -140,6 +140,7 @@ function MapViewportSync({ enabled, onBoundsChange }: MapViewportSyncProps) {
 }
 
 export function GisPage() {
+  const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -263,7 +264,7 @@ export function GisPage() {
         setError(err.message || "Failed to load spatial telemetry records.");
         setLoading(false);
       });
-  }, []);
+  }, [dataVersion]);
 
   useEffect(() => {
     if (activeBounds && viewportSyncEnabled) {

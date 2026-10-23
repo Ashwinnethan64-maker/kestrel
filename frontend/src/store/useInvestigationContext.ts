@@ -42,6 +42,14 @@ interface InvestigationContextState {
   datasetScale: 'curated' | 'large';
   setDatasetScale: (scale: 'curated' | 'large') => void;
 
+  // Offline Mode & Connectivity State
+  isOfflineMode: boolean;
+  backendStatus: 'connected' | 'offline_manual' | 'offline_fallback';
+  dataVersion: number;
+  setOfflineMode: (offline: boolean) => void;
+  setBackendStatus: (status: 'connected' | 'offline_manual' | 'offline_fallback') => void;
+  triggerDataRefresh: () => void;
+
   // Copilot Context Envelope Generator
   getPromptContextEnvelope: () => {
     activeLens: TacticalLensMode;
@@ -61,6 +69,8 @@ const DEFAULT_FILTERS: CaseFilterParams = {
   status: undefined,
   searchQuery: ''
 };
+
+const initialOffline = typeof window !== 'undefined' && localStorage.getItem('kestrel_offline_mode') === 'true';
 
 export const useInvestigationContext = create<InvestigationContextState>((set, get) => ({
   lensMode: 'geo',
@@ -96,6 +106,22 @@ export const useInvestigationContext = create<InvestigationContextState>((set, g
 
   datasetScale: 'curated',
   setDatasetScale: (scale) => set({ datasetScale: scale }),
+
+  isOfflineMode: initialOffline,
+  backendStatus: initialOffline ? 'offline_manual' : 'connected',
+  dataVersion: 0,
+  setOfflineMode: (offline) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('kestrel_offline_mode', String(offline));
+    }
+    set((state) => ({
+      isOfflineMode: offline,
+      backendStatus: offline ? 'offline_manual' : 'connected',
+      dataVersion: state.dataVersion + 1,
+    }));
+  },
+  setBackendStatus: (status) => set({ backendStatus: status }),
+  triggerDataRefresh: () => set((state) => ({ dataVersion: state.dataVersion + 1 })),
 
   getPromptContextEnvelope: () => {
     const s = get();

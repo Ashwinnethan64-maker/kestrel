@@ -1,5 +1,5 @@
-import curatedDataset from '@shared/fixtures/bengaluru_crime_curated.json';
 import {
+  curatedCrimeDataset,
   FIRCase,
   AccusedSuspect,
   CaseFilterParams,
@@ -17,6 +17,8 @@ import {
   CrimeSurgeResponse,
   StationCrimeSurgeAnomaly
 } from '@kestrel/shared';
+
+const curatedDataset = curatedCrimeDataset;
 
 export class MockIntelClient {
   private cases: FIRCase[] = (curatedDataset.cases || []) as FIRCase[];

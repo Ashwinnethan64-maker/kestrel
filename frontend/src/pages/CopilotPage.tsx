@@ -151,6 +151,7 @@ export function CopilotPage() {
     [threads, activeThreadId]
   );
 
+  const { dataVersion } = useInvestigationContext();
   const [messages, setMessages] = useState<ChatMessage[]>(activeThread?.messages || []);
   const [inputQuery, setInputQuery] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -178,13 +179,13 @@ export function CopilotPage() {
     Promise.all([
       apiClient.getCases(),
       apiClient.getAccused(),
-      (apiClient as any).getEvidenceByCaseId ? (apiClient as any).getEvidenceByCaseId("") : Promise.resolve({ data: [] }),
+      apiClient.getEvidenceByCaseId(""),
     ]).then(([casesRes, suspectsRes, evidenceRes]) => {
       setCases(casesRes.data);
       setSuspects(suspectsRes.data);
       setEvidenceList(evidenceRes.data || []);
     });
-  }, []);
+  }, [dataVersion]);
 
   // Update active thread when switched
   useEffect(() => {

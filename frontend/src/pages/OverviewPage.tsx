@@ -30,8 +30,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateView } from "@/components/ui/state-view";
 import { CrimeTrendActivityChart } from "@/components/dashboard/CrimeTrendActivityChart";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
 
 export function OverviewPage() {
+  const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -56,7 +58,7 @@ export function OverviewPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [dataVersion]);
 
   // 1. Four Principal KPI Metrics
   // Total FIRs

@@ -18,6 +18,8 @@ import type {
   CopilotResponseChunk
 } from '@kestrel/shared';
 
+import { useInvestigationContext } from '../../store/useInvestigationContext';
+
 const isLiveMode = import.meta.env.VITE_API_SOURCE === 'live';
 const isOfflineMode = import.meta.env.VITE_OFFLINE_MODE === 'true';
 
@@ -54,15 +56,48 @@ export interface CopilotStreamCallbacks {
 }
 
 class LiveOrMockClient {
-  private isLive: boolean = isLiveMode && !isOfflineMode;
+  private _isLive: boolean = isLiveMode && !isOfflineMode;
+  public onStatusChange?: (status: 'connected' | 'offline_manual' | 'offline_fallback', reason?: string) => void;
+
+  get isLive(): boolean {
+    if (typeof window !== 'undefined') {
+      const isManualOffline = localStorage.getItem('kestrel_offline_mode') === 'true';
+      if (isManualOffline) return false;
+    }
+    return this._isLive;
+  }
 
   getMode(): 'mock' | 'live' {
     return this.isLive ? 'live' : 'mock';
   }
 
   setMode(mode: 'mock' | 'live') {
-    this.isLive = mode === 'live';
+    this._isLive = mode === 'live';
     console.log(`[API Client] Active source mode switched to: ${mode}`);
+  }
+
+  private notifyDegraded(reason: string) {
+    if (this.onStatusChange) {
+      this.onStatusChange('offline_fallback', reason);
+    }
+    try {
+      const store = useInvestigationContext?.getState?.();
+      if (store && !store.isOfflineMode && store.backendStatus !== 'offline_fallback') {
+        store.setBackendStatus('offline_fallback');
+      }
+    } catch (_) {}
+  }
+
+  private notifyConnected() {
+    if (this.onStatusChange) {
+      this.onStatusChange('connected');
+    }
+    try {
+      const store = useInvestigationContext?.getState?.();
+      if (store && !store.isOfflineMode && store.backendStatus === 'offline_fallback') {
+        store.setBackendStatus('connected');
+      }
+    } catch (_) {}
   }
 
   private async safeFetch<T>(
@@ -77,14 +112,47 @@ class LiveOrMockClient {
       const res = await fetch(endpoint, init);
       if (!res.ok) {
         console.warn(`[API Client] Live endpoint ${endpoint} returned HTTP ${res.status}. Falling back to mock.`);
+        this.notifyDegraded(`Live HTTP ${res.status}`);
         return fallbackFn();
       }
+      this.notifyConnected();
       const data = await res.json();
       return data as ApiResponse<T>;
     } catch (err: any) {
       console.warn(`[API Client] Live connection failed on ${endpoint}: ${err.message}. Seamlessly falling back to mock.`);
+      this.notifyDegraded(`Connection failed: ${err.message}`);
       return fallbackFn();
     }
+  }
+
+  async createCase(
+    newCase: Omit<FIRCase, 'id' | 'createdAt' | 'updatedAt'> & Partial<Pick<FIRCase, 'id'>>
+  ): Promise<ApiResponse<FIRCase>> {
+    return this.safeFetch<FIRCase>(
+      '/api/cases',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCase)
+      },
+      () => mockClient.createCase(newCase)
+    );
+  }
+
+  async getEvidenceByCaseId(caseId: string): Promise<ApiResponse<any[]>> {
+    return this.safeFetch<any[]>(
+      `/api/cases/${encodeURIComponent(caseId)}`,
+      { method: 'GET' },
+      () => mockClient.getEvidenceByCaseId(caseId)
+    ).then((res) => {
+      if (res.data && (res.data as any).evidence) {
+        return {
+          ...res,
+          data: (res.data as any).evidence
+        };
+      }
+      return res as any;
+    });
   }
 
   async getCases(filters?: CaseFilterParams): Promise<ApiResponse<FIRCase[]>> {
@@ -292,6 +360,7 @@ class LiveOrMockClient {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
 
+        this.notifyConnected();
         const reader = res.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
@@ -334,6 +403,7 @@ class LiveOrMockClient {
           return;
         }
         console.warn(`[Copilot Live Stream Failed: ${err.message}] Running fallback simulation.`);
+        this.notifyDegraded(`Live stream error: ${err.message}`);
         this.runFallbackStream(envelope, callbacks, signal);
       }
     };

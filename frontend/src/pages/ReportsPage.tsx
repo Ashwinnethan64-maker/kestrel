@@ -33,6 +33,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
 
 interface IntelligenceReport {
   id: string;
@@ -91,6 +92,7 @@ const INITIAL_REPORTS: IntelligenceReport[] = [
 ];
 
 export function ReportsPage() {
+  const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [reports, setReports] = useState<IntelligenceReport[]>(INITIAL_REPORTS);
   const [selectedReport, setSelectedReport] = useState<IntelligenceReport | null>(null);
@@ -114,7 +116,7 @@ export function ReportsPage() {
     apiClient.getCases().then((res) => {
       setCases(res.data);
     });
-  }, []);
+  }, [dataVersion]);
 
   const categories = useMemo(() => Array.from(new Set(cases.map((c) => c.crimeCategory).filter(Boolean))).sort(), [cases]);
   const districts = useMemo(() => Array.from(new Set(cases.map((c) => c.district).filter(Boolean))).sort(), [cases]);

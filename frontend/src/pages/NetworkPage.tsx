@@ -47,8 +47,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { StateView } from "@/components/ui/state-view";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
 
 // Custom Node for React Flow
 const EntityCustomNode = ({ data, selected }: { data: any; selected?: boolean }) => {
@@ -149,6 +149,7 @@ const nodeTypes = {
 };
 
 export function NetworkPage() {
+  const { dataVersion } = useInvestigationContext();
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +184,7 @@ export function NetworkPage() {
         setError(err.message || "Failed to load network intelligence.");
         setLoading(false);
       });
-  }, []);
+  }, [dataVersion]);
 
   // Build Graph Nodes and Edges from Suspects, Cases, Syndicates, and Vehicles
   const { initialNodes, initialEdges } = useMemo(() => {

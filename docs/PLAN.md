@@ -298,9 +298,9 @@ gantt
   - [x] Sub-task 3.2.2: Transmit active UI state envelope (focused suspect, map bounds, date range) in prompt payload.
 - [x] **Task 3.3: PostGIS Viewport Sync**
   - [x] Sub-task 3.3.1: Debounce Leaflet map movement events to query live PostGIS bounding box incidents.
-- [ ] **Task 3.4: Offline Fallback Fail-Safe Verification**
-  - [ ] Sub-task 3.4.1: Add global UI toggle `Offline Mode [ON/OFF]`.
-  - [ ] Sub-task 3.4.2: Ensure frontend gracefully falls back to local in-memory fixtures if the backend is unreachable.
+- [x] **Task 3.4: Offline Fallback Fail-Safe Verification**
+  - [x] Sub-task 3.4.1: Add global UI toggle `Offline Mode [ON/OFF]`.
+  - [x] Sub-task 3.4.2: Ensure frontend gracefully falls back to local in-memory fixtures if the backend is unreachable.
 
 ---
 

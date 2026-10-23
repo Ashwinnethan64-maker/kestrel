@@ -51,6 +51,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateView } from "@/components/ui/state-view";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
 
 // Custom Leaflet marker for the Case Detail GIS preview
 const createCasePinIcon = (priority: string) => {
@@ -91,6 +92,7 @@ interface NewSuspectRecord {
 }
 
 export function CasesPage() {
+  const { dataVersion } = useInvestigationContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
@@ -186,16 +188,14 @@ export function CasesPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [dataVersion]);
 
   // Fetch evidence for detail view
   useEffect(() => {
     if (selectedCase) {
-      if ((apiClient as any).getEvidenceByCaseId) {
-        (apiClient as any).getEvidenceByCaseId(selectedCase.id).then((res: any) => {
-          setCaseEvidence(res.data || []);
-        });
-      }
+      apiClient.getEvidenceByCaseId(selectedCase.id).then((res: any) => {
+        setCaseEvidence(res.data || []);
+      });
     }
   }, [selectedCase]);
 

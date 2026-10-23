@@ -51,6 +51,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
 
 const PALETTE = ["#D4AF37", "#63E6D2", "#69A9FF", "#F2B66D", "#F85149", "#A78BFA", "#34D399"];
 
@@ -62,6 +63,7 @@ const SAVED_VIEWS = [
 ];
 
 export function AnalyticsPage() {
+  const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
   const [analytics, setAnalytics] = useState<TacticalAnalyticsSummary | null>(null);
@@ -91,7 +93,7 @@ export function AnalyticsPage() {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [dataVersion]);
 
   const districts = useMemo(() => Array.from(new Set(cases.map((c) => c.district).filter(Boolean))).sort(), [cases]);
   const stations = useMemo(() => Array.from(new Set(cases.map((c) => c.policeStation).filter(Boolean))).sort(), [cases]);

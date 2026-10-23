@@ -13,14 +13,21 @@ import {
   Laptop,
   Smartphone,
   Shield,
+  Database,
+  RefreshCw,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { apiClient } from "@/services/api/client";
 
 export function SettingsPage() {
+  const { isOfflineMode, setOfflineMode, triggerDataRefresh } = useInvestigationContext();
+
   // Profile Information State (Exact 6 fields)
   const [fullName, setFullName] = useState("Inspector R. Sharma");
   const [badgeNumber, setBadgeNumber] = useState("KSP-4491");
@@ -32,6 +39,38 @@ export function SettingsPage() {
   // Interaction State
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
+  // Fail-Safe Ping State
+  const [isPinging, setIsPinging] = useState(false);
+  const [pingResult, setPingResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handlePingBackend = async () => {
+    setIsPinging(true);
+    setPingResult(null);
+    const start = performance.now();
+    try {
+      const res = await fetch("/api/cases?limit=1");
+      const elapsed = Math.round(performance.now() - start);
+      if (res.ok) {
+        setPingResult({
+          type: "success",
+          message: `Backend reachable: HTTP 200 OK (${elapsed}ms latency) • PostgreSQL/PostGIS operational.`,
+        });
+      } else {
+        setPingResult({
+          type: "error",
+          message: `Backend responded with HTTP ${res.status} (${elapsed}ms). Fallback fixtures ready.`,
+        });
+      }
+    } catch (err: any) {
+      setPingResult({
+        type: "error",
+        message: `Connection failed: ${err.message}. Failover guard will route queries to in-memory fixtures.`,
+      });
+    } finally {
+      setIsPinging(false);
+    }
+  };
 
   // Security Modal States
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -289,6 +328,131 @@ export function SettingsPage() {
                 <Monitor className="h-4 w-4 text-secondary shrink-0" />
                 <span>View Active Sessions</span>
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* C. Tactical Fail-Safe & Intelligence Source Card (Spans full 12 cols) */}
+        <Card className="lg:col-span-12 shadow-sm border-primary/30 bg-surface-elevated/40">
+          <CardHeader className="p-5 pb-3 border-b border-border/80 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-mono font-bold flex items-center gap-2.5 text-foreground">
+              <Database className="h-5 w-5 text-primary shrink-0" />
+              <span>Tactical Intelligence Engine & Fail-Safe Architecture</span>
+            </CardTitle>
+            <Badge
+              variant={isOfflineMode ? "attention" : "tactical"}
+              className="font-mono text-[10px]"
+            >
+              {isOfflineMode ? "OFFLINE DEMO" : "LIVE BACKEND ENGAGED"}
+            </Badge>
+          </CardHeader>
+
+          <CardContent className="p-5 space-y-5 font-mono text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Source Mode Column */}
+              <div className="p-4 rounded border border-border/80 bg-card space-y-2">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Active Intelligence Source
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      "h-3 w-3 rounded-full",
+                      isOfflineMode
+                        ? "bg-amber-400"
+                        : "bg-emerald-400 animate-pulse"
+                    )}
+                  />
+                  <span className="font-bold text-foreground text-sm">
+                    {isOfflineMode ? "In-Memory Tactical Fixtures" : "Live PostgreSQL / PostGIS"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground font-sans">
+                  {isOfflineMode
+                    ? "Operating with zero network calls. High-fidelity golden crime dataset loaded in memory."
+                    : "Executing live spatial radius queries, Cosine vector semantic search, and SSE stream."}
+                </p>
+              </div>
+
+              {/* Fail-Safe Guard Column */}
+              <div className="p-4 rounded border border-border/80 bg-card space-y-2">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Fail-Safe Guard Status
+                </div>
+                <div className="flex items-center gap-2 text-positive font-bold text-sm">
+                  <ShieldCheck className="h-4 w-4 text-positive shrink-0" />
+                  <span>Auto-Failover Active</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground font-sans">
+                  If backend is killed or venue Wi-Fi fails, requests instantly divert to local fixtures without blank screens or thrown errors.
+                </p>
+              </div>
+
+              {/* Data Density Column */}
+              <div className="p-4 rounded border border-border/80 bg-card space-y-2">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Local Fixture Density
+                </div>
+                <div className="text-foreground font-bold text-sm flex items-center gap-3">
+                  <span>75 FIRs</span>
+                  <span className="text-border">|</span>
+                  <span>25 Suspects</span>
+                  <span className="text-border">|</span>
+                  <span>3 Syndicates</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground font-sans">
+                  Includes bilingual English/Kannada narratives, CCTV evidence, and PostGIS coordinate jitter.
+                </p>
+              </div>
+            </div>
+
+            {/* Tactical Controls & Ping Test */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-border/60">
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant={isOfflineMode ? "tactical" : "outline"}
+                  onClick={() => {
+                    const next = !isOfflineMode;
+                    setOfflineMode(next);
+                    apiClient.setMode(next ? "mock" : "live");
+                    triggerDataRefresh();
+                  }}
+                  className="font-mono text-xs gap-2"
+                >
+                  <Database className="h-3.5 w-3.5" />
+                  <span>{isOfflineMode ? "Switch to Live Mode" : "Force Offline Fixture Mode"}</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePingBackend}
+                  disabled={isPinging}
+                  className="font-mono text-xs gap-2"
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5", isPinging && "animate-spin")} />
+                  <span>{isPinging ? "Pinging..." : "Test Backend Connectivity"}</span>
+                </Button>
+              </div>
+
+              {pingResult && (
+                <div
+                  className={cn(
+                    "px-3 py-1.5 rounded border text-xs flex items-center gap-2",
+                    pingResult.type === "success"
+                      ? "bg-positive/10 border-positive/30 text-positive"
+                      : "bg-destructive/10 border-destructive/30 text-destructive"
+                  )}
+                >
+                  {pingResult.type === "success" ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <CircleAlert className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                  <span>{pingResult.message}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

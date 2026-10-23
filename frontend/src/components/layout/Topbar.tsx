@@ -10,11 +10,16 @@ import {
   SlidersHorizontal,
   ChevronRight,
   ShieldAlert,
+  WifiOff,
+  Database,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusIndicator } from "@/components/ui/status-indicator";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { apiClient } from "@/services/api/client";
 
 interface TopbarProps {
   onOpenMobileSidebar: () => void;
@@ -29,6 +34,39 @@ export function Topbar({
   const [lang, setLang] = useState<"EN" | "KN">("EN");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isRetryingLive, setIsRetryingLive] = useState(false);
+
+  const {
+    isOfflineMode,
+    setOfflineMode,
+    backendStatus,
+    setBackendStatus,
+    triggerDataRefresh,
+  } = useInvestigationContext();
+
+  const handleToggleOffline = () => {
+    const nextMode = !isOfflineMode;
+    setOfflineMode(nextMode);
+    apiClient.setMode(nextMode ? "mock" : "live");
+    triggerDataRefresh();
+  };
+
+  const handleRetryLive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRetryingLive(true);
+    try {
+      const res = await fetch("/api/cases?limit=1");
+      if (res.ok) {
+        setBackendStatus("connected");
+        apiClient.setMode("live");
+        triggerDataRefresh();
+      }
+    } catch (err) {
+      console.warn("[HUD Retry] Live ping failed:", err);
+    } finally {
+      setIsRetryingLive(false);
+    }
+  };
 
   // Compute Breadcrumb from route
   const pathParts = location.pathname.split("/").filter(Boolean);
@@ -82,8 +120,64 @@ export function Topbar({
         </button>
       </div>
 
-      {/* Right Controls: Language, Notifications, Mission Status & Account */}
+      {/* Right Controls: Tactical Mode Toggle, Language, Notifications, Mission Status & Account */}
       <div className="flex items-center gap-2">
+        {/* Global Tactical Mode Toggle: LIVE vs OFFLINE DEMO */}
+        <div className="flex items-center">
+          {backendStatus === "offline_fallback" ? (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-destructive/40 bg-destructive/10 text-destructive text-[11px] font-mono animate-pulse">
+              <WifiOff className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-bold hidden xl:inline">FAILOVER: FIXTURES</span>
+              <span className="font-bold xl:hidden">FAILOVER</span>
+              <button
+                onClick={handleRetryLive}
+                disabled={isRetryingLive}
+                className="ml-1 px-1.5 py-0.5 rounded bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold flex items-center gap-1 transition-colors text-[10px]"
+                title="Retry Live Backend Connection"
+              >
+                <RefreshCw className={cn("h-2.5 w-2.5", isRetryingLive && "animate-spin")} />
+                {isRetryingLive ? "..." : "Retry"}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleToggleOffline}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 rounded border text-[11px] font-mono transition-all select-none",
+                isOfflineMode
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+              )}
+              title={
+                isOfflineMode
+                  ? "Running 100% on local in-memory fixtures. Click to switch to Live Backend."
+                  : "Connected to Live PostgreSQL/PostGIS Backend. Click to switch to Offline Demo."
+              }
+            >
+              {isOfflineMode ? (
+                <>
+                  <Database className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="font-bold tracking-wide">OFFLINE DEMO</span>
+                  <span className="hidden sm:inline text-[9px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300">
+                    FIXTURES
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="font-bold tracking-wide">LIVE BACKEND</span>
+                  <span className="hidden sm:inline text-[9px] px-1 py-0.2 rounded bg-emerald-400/20 text-emerald-300">
+                    ONLINE
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
         {/* Language Selector (KN/EN) */}
         <button
           onClick={() => setLang(lang === "EN" ? "KN" : "EN")}
