@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Kestrel Editorial Design Tokens (Art & Editorial) */
+    --background: 240 5% 8%;         /* #141416 - Deep Charcoal / Rich Black */
+    --foreground: 40 20% 95%;        /* #F5F3EF - Parchment Off-White */
+
+    --sidebar: 240 6% 10%;           /* #18181B - Editorial Obsidian Drawer */
+    --sidebar-foreground: 40 20% 95%;
+    --sidebar-muted: 40 10% 70%;     /* #B5B0A8 - Muted Editorial Type */
+    --sidebar-border: 240 8% 22%;    /* Hairline Sepia Border */
+
+    --card: 240 6% 13%;              /* #202024 - Card Surface */
+    --card-foreground: 40 20% 95%;
+
+    --popover: 240 6% 13%;
+    --popover-foreground: 40 20% 95%;
+
+    --surface-elevated: 240 6% 18%;  /* #2C2C33 - Elevated Surface */
+
+    --muted: 240 5% 20%;
+    --muted-foreground: 40 10% 70%;
+
+    --border: 40 15% 26%;            /* Fine Publication Border */
+    --input: 40 15% 26%;
+    
+    /* Primary Accent - Editorial Gold / Warm Ochre #D4AF37 */
+    --primary: 45 65% 52%;
+    --primary-foreground: 240 5% 8%;
+
+    /* Secondary Accent - Fine Slate #69A9FF / Metallic Slate */
+    --secondary: 210 30% 70%;
+    --secondary-foreground: 240 5% 8%;
+
+    /* Status & Alerts */
+    --attention: 35 70% 60%;
+    --attention-foreground: 240 5% 8%;
+
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 40 20% 95%;
+
+    --positive: 140 50% 50%;
+    --positive-foreground: 240 5% 8%;
+
+    --ring: 45 65% 52%;              /* Gold Focus Ring */
+    --radius: 0.125rem;              /* Crisp 2px editorial hairline corners */
+
+    /* Animation Timings */
+    --motion-fast: 150ms;
+    --motion-standard: 250ms;
+    --motion-slow: 400ms;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+    font-family: Georgia, Cambria, 'Times New Roman', Times, serif, system-ui;
+  }
+  /* Accessible visible focus styles for interactive elements */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+/* Custom Editorial Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #141416;
+}
+::-webkit-scrollbar-thumb {
+  background: #38342D;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+/* Editorial Fine Line Grid Pattern */
+.bg-tactical-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(212, 175, 55, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(212, 175, 55, 0.08) 1px, transparent 1px);
+}
+
+.glow-teal, .glow-gold {
+  box-shadow: 0 0 20px -3px rgba(212, 175, 55, 0.25);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px -3px rgba(105, 169, 255, 0.25);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px -3px rgba(248, 81, 73, 0.3);
+}
+
+/* Custom Leaflet Map Dark Theme Overrides */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #18181B !important;
+  color: #F5F3EF !important;
+  border: 1px solid #38342D !important;
+  border-radius: 2px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+.leaflet-popup-content {
+  margin: 8px 12px !important;
+  line-height: 1.4 !important;
+}
+.leaflet-container {
+  font-family: inherit !important;
+  background-color: #141416 !important;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #A3A3A3 !important;
+  padding: 6px 6px 0 0 !important;
+}
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #D4AF37 !important;
+}
+
+/* WCAG Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
