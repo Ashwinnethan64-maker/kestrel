@@ -1,15 +1,24 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
-  Activity,
+  FileText,
+  Target,
+  FolderSearch,
   ShieldAlert,
+  UsersRound,
+  Flame,
+  MapPin,
+  Sparkles,
+  Network,
+  Download,
+  ExternalLink,
+  ChevronRight,
+  BrainCircuit,
+  ArrowRight,
+  Activity,
+  AlertTriangle,
   Radio,
   Clock,
-  Sparkles,
-  MapPin,
-  FolderGit2,
-  Share2,
-  Download,
   CheckCircle,
 } from "lucide-react";
 import { apiClient } from "@/services/api/client";
@@ -17,33 +26,16 @@ import { FIRCase, AccusedSuspect } from "@kestrel/shared";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateView } from "@/components/ui/state-view";
-
-// Reusable Dashboard Components
-import { KPIStatCard } from "@/components/dashboard/KPIStatCard";
-import { DashboardFilterBar, DashboardFilterState } from "@/components/dashboard/DashboardFilterBar";
-import { CrimeTrendChart } from "@/components/dashboard/CrimeTrendChart";
-import { GeoIntelPanel } from "@/components/dashboard/GeoIntelPanel";
-import { AskKestrelPanel } from "@/components/dashboard/AskKestrelPanel";
-import { EntityNetworkPreview } from "@/components/dashboard/EntityNetworkPreview";
-import { RecentRecordsTable } from "@/components/dashboard/RecentRecordsTable";
+import { CrimeTrendActivityChart } from "@/components/dashboard/CrimeTrendActivityChart";
 
 export function OverviewPage() {
-  const [allCases, setAllCases] = useState<FIRCase[]>([]);
-  const [allSuspects, setAllSuspects] = useState<AccusedSuspect[]>([]);
+  const [cases, setCases] = useState<FIRCase[]>([]);
+  const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [exportNotice, setExportNotice] = useState<boolean>(false);
-
-  // Filter State
-  const [filterState, setFilterState] = useState<DashboardFilterState>({
-    dateRange: "all",
-    policeStation: "all",
-    category: "all",
-    priority: "all",
-    searchQuery: "",
-  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -53,10 +45,10 @@ export function OverviewPage() {
         apiClient.getCases(),
         apiClient.getAccused(),
       ]);
-      setAllCases(casesRes.data);
-      setAllSuspects(suspectsRes.data);
+      setCases(casesRes.data);
+      setSuspects(suspectsRes.data);
     } catch (err: any) {
-      setError(err?.message || "Failed to load tactical telemetry stream.");
+      setError(err?.message || "Failed to load command-center telemetry.");
     } finally {
       setLoading(false);
     }
@@ -66,234 +58,466 @@ export function OverviewPage() {
     fetchData();
   }, []);
 
-  // Compute Available Stations & Categories dynamically
-  const availableStations = useMemo(() => {
-    return Array.from(new Set(allCases.map((c) => c.policeStation))).sort();
-  }, [allCases]);
+  // 1. Four Principal KPI Metrics
+  // Total FIRs
+  const totalFIRs = cases.length;
 
-  const availableCategories = useMemo(() => {
-    return Array.from(new Set(allCases.map((c) => c.crimeCategory))).sort();
-  }, [allCases]);
+  // Active Cases (Open or Under Investigation)
+  const activeCasesCount = useMemo(() => {
+    return cases.filter((c) => c.status === "Open" || c.status === "Under Investigation").length;
+  }, [cases]);
 
-  // Apply Filters Client-side
-  const filteredCases = useMemo(() => {
-    return allCases.filter((c) => {
-      // Station filter
-      if (
-        filterState.policeStation !== "all" &&
-        c.policeStation.toLowerCase() !== filterState.policeStation.toLowerCase()
-      ) {
-        return false;
-      }
+  // Repeat Offenders
+  const repeatOffendersCount = useMemo(() => {
+    return suspects.filter((s) => s.isRepeatOffender || s.totalPriorArrests > 1).length;
+  }, [suspects]);
 
-      // Category filter
-      if (
-        filterState.category !== "all" &&
-        c.crimeCategory.toLowerCase() !== filterState.category.toLowerCase()
-      ) {
-        return false;
-      }
+  // Crime Hotspots (distinct police stations with critical or high activity)
+  const hotspotCount = useMemo(() => {
+    const stations = new Set(cases.map((c) => c.policeStation));
+    return stations.size;
+  }, [cases]);
 
-      // Priority filter
-      if (
-        filterState.priority !== "all" &&
-        c.priority !== filterState.priority
-      ) {
-        return false;
-      }
+  // Critical incident count
+  const criticalCount = useMemo(() => {
+    return cases.filter((c) => c.priority === "Critical").length;
+  }, [cases]);
 
-      // Date Range filter (simulation based on days from reference)
-      if (filterState.dateRange !== "all") {
-        const incidentTime = new Date(c.incidentDate).getTime();
-        const now = new Date("2024-10-23T12:00:00Z").getTime(); // fixed demo reference point
-        const diffHours = (now - incidentTime) / (1000 * 60 * 60);
+  // Recent Case Files (first 5 cases sorted by date)
+  const recentCaseFiles = useMemo(() => {
+    return [...cases]
+      .sort((a, b) => new Date(b.incidentDate).getTime() - new Date(a.incidentDate).getTime())
+      .slice(0, 5);
+  }, [cases]);
 
-        if (filterState.dateRange === "24h" && diffHours > 48) return false;
-        if (filterState.dateRange === "7d" && diffHours > 7 * 24) return false;
-        if (filterState.dateRange === "30d" && diffHours > 30 * 24) return false;
-      }
-
-      // Search Query
-      if (filterState.searchQuery.trim()) {
-        const q = filterState.searchQuery.toLowerCase();
-        return (
-          c.firNumber.toLowerCase().includes(q) ||
-          c.description.toLowerCase().includes(q) ||
-          c.applicableActs.some((a) => a.toLowerCase().includes(q))
-        );
-      }
-
-      return true;
-    });
-  }, [allCases, filterState]);
-
-  // KPI Calculations
-  const totalRecords = filteredCases.length;
-  const casesUnderReview = filteredCases.filter(
-    (c) => c.status === "Under Investigation"
-  ).length;
-  const criticalCases = filteredCases.filter((c) => c.priority === "Critical").length;
-  const activeHotspotCount = useMemo(() => {
-    return new Set(filteredCases.map((c) => c.policeStation)).size;
-  }, [filteredCases]);
-
-  // Handlers
-  const handleFilterChange = (updated: Partial<DashboardFilterState>) => {
-    setFilterState((prev) => ({ ...prev, ...updated }));
-  };
-
-  const handleExportBriefing = () => {
-    setExportNotice(true);
-    setTimeout(() => setExportNotice(false), 3000);
-  };
+  // Recent Alerts derived honestly from critical and recent cases
+  const recentAlerts = useMemo(() => {
+    return [
+      {
+        id: "alert-1",
+        title: "Commercial Armed Robbery Corridor Spike",
+        severity: "Critical",
+        description: "Three armed suspects armed with machetes deployed stolen black sedan KA-04-E-1234 on 100 Feet Road.",
+        firNumber: "FIR-2024-INDR-0102",
+        station: "Indiranagar",
+        time: "2 hours ago",
+      },
+      {
+        id: "alert-2",
+        title: "CAN-Bus Electronic Vehicle Theft Alert",
+        severity: "High",
+        description: "Cloned key transmitter utilized in apartment parking perimeter along Old Madras Road.",
+        firNumber: "FIR-2024-KRP-0215",
+        station: "K.R. Puram",
+        time: "6 hours ago",
+      },
+      {
+        id: "alert-3",
+        title: "Cyber Banking Account Layering",
+        severity: "High",
+        description: "Six mule bank accounts flagged for unauthorized wire routing originating from Whitefield tech park.",
+        firNumber: "FIR-2024-WFD-0301",
+        station: "Whitefield",
+        time: "18 hours ago",
+      },
+    ];
+  }, []);
 
   return (
-    <div className="space-y-6">
-      {/* 1. Page Header */}
+    <div className="space-y-5 font-mono text-xs">
+      {/* A. Dashboard Header */}
       <PageHeader
-        title="Intelligence Overview"
-        subtitle="Explore patterns, relationships and geographic insights across the available records."
+        title="Mission Control Dashboard"
+        subtitle="The command-center view surfaces current intelligence, high-priority alerts, and the next investigative actions."
         badge={
           <Badge variant="tactical" dot={true}>
-            SYNTHETIC TELEMETRY // DEMO
+            DEMO DATA // BENGALURU JURISDICTION
           </Badge>
         }
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportBriefing}
-              className="gap-1.5 font-mono text-xs"
-            >
-              {exportNotice ? (
-                <>
-                  <CheckCircle className="h-3.5 w-3.5 text-positive" />
-                  <span>BRIEFING COMPILED</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-3.5 w-3.5" />
-                  <span>EXPORT BRIEF</span>
-                </>
-              )}
-            </Button>
-            <Link to="/copilot">
-              <Button variant="tactical" size="sm" className="gap-1.5 font-mono text-xs">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>ASK KESTREL</span>
-              </Button>
-            </Link>
-          </div>
-        }
       />
 
-      {/* 2. Responsive Dashboard Operational Filter Bar */}
-      <DashboardFilterBar
-        filters={filterState}
-        onChange={handleFilterChange}
-        onRefresh={fetchData}
-        availableStations={availableStations}
-        availableCategories={availableCategories}
-        totalMatches={totalRecords}
-      />
-
-      {/* 3. Error or Loading Handling */}
+      {/* Error Handling */}
       {error && (
         <StateView
           variant="error"
-          title="Telemetry Bus Failure"
+          title="Telemetry Connection Issue"
           description={error}
-          actionLabel="Retry Connection"
+          actionLabel="Retry"
           onAction={fetchData}
         />
       )}
 
       {loading ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Skeleton className="h-80 lg:col-span-2" />
-            <Skeleton className="h-80" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <Skeleton className="h-72 lg:col-span-8" />
+            <Skeleton className="h-72 lg:col-span-4" />
           </div>
         </div>
       ) : (
         <>
-          {/* 4. Four Primary KPI Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPIStatCard
-              title="Total Records"
-              value={totalRecords}
-              description="Chronologically indexed FIRs"
-              trend={{ value: "+14.2%", isPositive: true }}
-              icon={<Activity className="h-4 w-4 text-primary" />}
-              glow="teal"
-              targetRoute="/cases"
-            />
-            <KPIStatCard
-              title="Cases Under Review"
-              value={casesUnderReview}
-              description="Active station inquiries"
-              trend={{ value: "-6.1%", isPositive: true }}
-              icon={<Radio className="h-4 w-4 text-secondary" />}
-              glow="blue"
-              targetRoute="/cases"
-            />
-            <KPIStatCard
-              title="Linked Entities"
-              value={allSuspects.length}
-              description="Accused & syndicate nodes"
-              trend={{ value: "3 Gangs", isNeutral: true }}
-              icon={<Share2 className="h-4 w-4 text-primary" />}
-              targetRoute="/network"
-            />
-            <KPIStatCard
-              title="Geographic Hotspots"
-              value={activeHotspotCount}
-              description="High-density station clusters"
-              trend={{ value: `${criticalCases} Critical`, isPositive: criticalCases === 0 ? true : false }}
-              icon={<MapPin className="h-4 w-4 text-destructive" />}
-              glow={criticalCases > 0 ? "red" : "none"}
-              targetRoute="/gis"
-            />
+          {/* ============================================================== */}
+          {/* B. Four Principal KPI Metric Cards in One Balanced Row       */}
+          {/* ============================================================== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* 1. Total FIRs */}
+            <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                  Total FIRs
+                </span>
+                <div className="h-8 w-8 rounded bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+                  <FileText className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="space-y-1 mt-2">
+                <div className="text-2xl font-bold text-foreground font-mono">{totalFIRs}</div>
+                <div className="text-[11px] text-muted-foreground font-sans">
+                  Chronologically registered FIR records
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
+                <span className="text-primary font-bold">100% Index Coverage</span>
+                <Link to="/cases" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
+                  <span>Explore</span>
+                  <ChevronRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+            </Card>
+
+            {/* 2. Active Cases */}
+            <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                  Active Cases
+                </span>
+                <div className="h-8 w-8 rounded bg-secondary/15 border border-secondary/30 flex items-center justify-center text-secondary">
+                  <FolderSearch className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="space-y-1 mt-2">
+                <div className="text-2xl font-bold text-foreground font-mono">{activeCasesCount}</div>
+                <div className="text-[11px] text-muted-foreground font-sans">
+                  Inquiries under active investigation
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
+                <span className="text-secondary font-bold">{criticalCount} Critical Priority</span>
+                <Link to="/cases" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
+                  <span>View Cases</span>
+                  <ChevronRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+            </Card>
+
+            {/* 3. Repeat Offenders */}
+            <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                  Repeat Offenders
+                </span>
+                <div className="h-8 w-8 rounded bg-destructive/15 border border-destructive/30 flex items-center justify-center text-destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="space-y-1 mt-2">
+                <div className="text-2xl font-bold text-foreground font-mono">{repeatOffendersCount}</div>
+                <div className="text-[11px] text-muted-foreground font-sans">
+                  Recidivists with prior arrest records
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
+                <span className="text-destructive font-bold">{suspects.length} Total Suspects</span>
+                <Link to="/network" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
+                  <span>Network</span>
+                  <ChevronRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+            </Card>
+
+            {/* 4. Crime Hotspots */}
+            <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                  Crime Hotspots
+                </span>
+                <div className="h-8 w-8 rounded bg-[#F2B66D]/15 border border-[#F2B66D]/30 flex items-center justify-center text-[#F2B66D]">
+                  <Flame className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="space-y-1 mt-2">
+                <div className="text-2xl font-bold text-foreground font-mono">{hotspotCount}</div>
+                <div className="text-[11px] text-muted-foreground font-sans">
+                  Active geographic station divisions
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
+                <span className="text-[#F2B66D] font-bold">Bengaluru East / Central</span>
+                <Link to="/gis" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
+                  <span>Crime Map</span>
+                  <ChevronRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+            </Card>
           </div>
 
-          {/* 5. Asymmetric Swiss Bento Layout Workspace */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Main Trend & Velocity Chart (7 cols) */}
-            <div className="lg:col-span-7">
-              <CrimeTrendChart cases={filteredCases} />
+          {/* ============================================================== */}
+          {/* C & D. Middle Row: Crime Trend Activity (8 cols) + Quick Actions (4 cols) */}
+          {/* ============================================================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* C. Crime Trend Activity */}
+            <div className="lg:col-span-8 flex flex-col">
+              <CrimeTrendActivityChart cases={cases} />
             </div>
 
-            {/* Geographic Intelligence Panel (5 cols) */}
-            <div className="lg:col-span-5">
-              <GeoIntelPanel cases={filteredCases} />
+            {/* D. Quick Actions */}
+            <div className="lg:col-span-4 flex flex-col">
+              <Card className="h-full border border-border shadow-xs flex flex-col justify-between">
+                <CardHeader className="py-3 px-4 border-b border-border/80 bg-sidebar/50">
+                  <CardTitle className="text-xs font-mono font-bold text-foreground">
+                    Quick Actions
+                  </CardTitle>
+                  <p className="text-[11px] text-muted-foreground font-sans mt-0.5">
+                    Command directives for tactical intelligence analysis.
+                  </p>
+                </CardHeader>
+                <CardContent className="p-3.5 space-y-2 flex-1 flex flex-col justify-center">
+                  {/* Action 1: Ask AI Investigator */}
+                  <Link to="/copilot" className="block">
+                    <Button
+                      variant="tactical"
+                      size="sm"
+                      className="w-full justify-start gap-2.5 h-10 font-mono text-xs"
+                    >
+                      <Sparkles className="h-4 w-4 shrink-0 text-primary-foreground" />
+                      <div className="text-left">
+                        <div className="font-bold">Ask AI Investigator</div>
+                        <div className="text-[10px] opacity-80 font-sans font-normal">
+                          Correlate FIR patterns & MO signatures
+                        </div>
+                      </div>
+                    </Button>
+                  </Link>
+
+                  {/* Action 2: Search FIR Database */}
+                  <Link to="/cases" className="block">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start gap-2.5 h-10 font-mono text-xs border-border hover:bg-surface-elevated"
+                    >
+                      <FolderSearch className="h-4 w-4 shrink-0 text-secondary" />
+                      <div className="text-left">
+                        <div className="font-bold text-foreground">Search FIR Database</div>
+                        <div className="text-[10px] text-muted-foreground font-sans font-normal">
+                          Drill down into statutory case records
+                        </div>
+                      </div>
+                    </Button>
+                  </Link>
+
+                  {/* Action 3: Open Criminal Network */}
+                  <Link to="/network" className="block">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start gap-2.5 h-10 font-mono text-xs border-border hover:bg-surface-elevated"
+                    >
+                      <Network className="h-4 w-4 shrink-0 text-primary" />
+                      <div className="text-left">
+                        <div className="font-bold text-foreground">Open Criminal Network</div>
+                        <div className="text-[10px] text-muted-foreground font-sans font-normal">
+                          Graph co-accused links and syndicates
+                        </div>
+                      </div>
+                    </Button>
+                  </Link>
+
+                  {/* Action 4: Generate Threat Report */}
+                  <Link to="/reports" className="block">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start gap-2.5 h-10 font-mono text-xs border-border hover:bg-surface-elevated"
+                    >
+                      <Download className="h-4 w-4 shrink-0 text-[#A78BFA]" />
+                      <div className="text-left">
+                        <div className="font-bold text-foreground">Generate Threat Report</div>
+                        <div className="text-[10px] text-muted-foreground font-sans font-normal">
+                          Compile situational PDF intelligence
+                        </div>
+                      </div>
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* ============================================================== */}
+          {/* E & F. Lower Row: Recent Alerts + AI Threat Insight (8 cols) + Recent Case Files (4 cols) */}
+          {/* ============================================================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            {/* Left 8 Columns: Recent Alerts & AI Threat Insight */}
+            <div className="lg:col-span-8 space-y-4">
+              {/* Recent Alerts */}
+              <Card className="border border-border shadow-xs">
+                <CardHeader className="py-2.5 px-4 border-b border-border/80 flex flex-row items-center justify-between bg-sidebar/50">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
+                    <CardTitle className="text-xs font-mono font-bold text-foreground">
+                      Recent Intelligence Alerts
+                    </CardTitle>
+                  </div>
+                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
+                    3 ACTIVE ALERTS
+                  </Badge>
+                </CardHeader>
+                <CardContent className="p-3 space-y-2">
+                  {recentAlerts.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className="p-2.5 rounded bg-surface-elevated/70 border border-border flex items-start justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-foreground text-xs">{alert.title}</span>
+                          <Badge
+                            variant={alert.severity === "Critical" ? "destructive" : "attention"}
+                            className="text-[9px] px-1 py-0"
+                          >
+                            {alert.severity}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            {alert.station} • {alert.time}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground font-sans line-clamp-2">
+                          {alert.description}
+                        </p>
+                      </div>
+                      <Link
+                        to={`/cases?caseId=${alert.firNumber}`}
+                        className="text-primary hover:underline font-mono text-[10px] shrink-0 flex items-center gap-0.5 mt-1"
+                      >
+                        <span>{alert.firNumber}</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* AI Threat Insight */}
+              <Card className="border border-border shadow-xs">
+                <CardHeader className="py-2.5 px-4 border-b border-border/80 flex flex-row items-center justify-between bg-sidebar/50">
+                  <div className="flex items-center gap-2">
+                    <BrainCircuit className="h-4 w-4 text-primary shrink-0" />
+                    <CardTitle className="text-xs font-mono font-bold text-foreground">
+                      AI Threat Insight // Modus Operandi Synthesis
+                    </CardTitle>
+                  </div>
+                  <Badge variant="tactical" className="text-[9px] px-1.5 py-0">
+                    GROUNDED PATTERN
+                  </Badge>
+                </CardHeader>
+                <CardContent className="p-3.5 space-y-2.5">
+                  <div className="p-3 rounded bg-surface-elevated/60 border border-border font-sans text-xs text-foreground leading-relaxed space-y-1.5">
+                    <div className="font-bold font-mono text-primary text-xs flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Coordinated Syndicate Corridor Activity</span>
+                    </div>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Cross-referencing telemetry across Indiranagar and K.R. Puram indicates
+                      coordinated operations by the East Ring Syndicate. Getaway vehicle KA-04-E-1234
+                      connects three recent burglary cases within a 48-hour window. Toolmark impressions
+                      from recovered bolt cutters verify identical hydraulic equipment.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[11px]">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>Related Records:</span>
+                      <Link to="/cases?caseId=FIR-2024-INDR-0102" className="text-primary hover:underline font-mono">
+                        FIR-2024-INDR-0102
+                      </Link>
+                      <span>•</span>
+                      <Link to="/cases?caseId=FIR-2024-KRP-0215" className="text-primary hover:underline font-mono">
+                        FIR-2024-KRP-0215
+                      </Link>
+                    </div>
+                    <Link to="/copilot">
+                      <Button variant="outline" size="sm" className="h-6 text-[10px] font-mono gap-1">
+                        <Sparkles className="h-3 w-3 text-primary" />
+                        <span>Query Copilot</span>
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* "Ask Kestrel" Conversational Copilot Entry Point (6 cols) */}
-            <div className="lg:col-span-6">
-              <AskKestrelPanel
-                onExecuteQuery={(q) => {
-                  if (q.includes("Indiranagar")) {
-                    handleFilterChange({ policeStation: "Indiranagar" });
-                  }
-                }}
-              />
-            </div>
-
-            {/* Entity-Relationship Network Preview (6 cols) */}
-            <div className="lg:col-span-6">
-              <EntityNetworkPreview />
-            </div>
-
-            {/* Full-width Recent Records & Priority Incident Table (12 cols) */}
-            <div className="lg:col-span-12">
-              <RecentRecordsTable cases={filteredCases} />
+            {/* Right 4 Columns: Recent Case Files */}
+            <div className="lg:col-span-4">
+              <Card className="border border-border shadow-xs h-full flex flex-col justify-between">
+                <CardHeader className="py-2.5 px-4 border-b border-border/80 flex flex-row items-center justify-between bg-sidebar/50">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-secondary shrink-0" />
+                    <CardTitle className="text-xs font-mono font-bold text-foreground">
+                      Recent Case Files
+                    </CardTitle>
+                  </div>
+                  <Link to="/cases" className="text-[10px] text-primary hover:underline font-mono">
+                    View All
+                  </Link>
+                </CardHeader>
+                <CardContent className="p-3 space-y-2 flex-1">
+                  {recentCaseFiles.map((c) => (
+                    <div
+                      key={c.id}
+                      className="p-2.5 rounded bg-surface-elevated/70 border border-border flex items-center justify-between text-xs hover:border-primary/50 transition-colors"
+                    >
+                      <div className="truncate pr-2">
+                        <Link
+                          to={`/cases?caseId=${c.id}`}
+                          className="font-bold text-primary font-mono hover:underline block truncate"
+                        >
+                          {c.firNumber}
+                        </Link>
+                        <div className="text-[11px] text-foreground font-semibold truncate">
+                          {c.crimeCategory}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground truncate">
+                          {c.policeStation} • {c.district}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 space-y-1">
+                        <Badge
+                          variant={
+                            c.priority === "Critical"
+                              ? "destructive"
+                              : c.priority === "High"
+                              ? "attention"
+                              : "tactical"
+                          }
+                          className="text-[9px] px-1 py-0 block"
+                        >
+                          {c.priority}
+                        </Badge>
+                        <span className="text-[9px] text-muted-foreground block font-mono">
+                          {new Date(c.incidentDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </>

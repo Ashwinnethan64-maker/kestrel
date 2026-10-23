@@ -1,18 +1,16 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
-  Sparkles,
-  FolderGit2,
-  Share2,
-  MapPin,
-  BarChart3,
+  BrainCircuit,
+  FolderSearch,
+  Network,
+  Map,
+  ChartNoAxesCombined,
   FileText,
   Settings,
-  ChevronLeft,
-  ChevronRight,
-  Shield,
-  Layers,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { KestrelLogo } from "./KestrelLogo";
@@ -27,12 +25,12 @@ export interface NavItem {
 }
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
-  { label: "Overview", path: "/overview", icon: LayoutDashboard },
-  { label: "AI Copilot", path: "/copilot", icon: Sparkles, badge: "AI" },
-  { label: "Cases & FIRs", path: "/cases", icon: FolderGit2 },
-  { label: "Entity Network", path: "/network", icon: Share2 },
-  { label: "Geographic Intel", path: "/gis", icon: MapPin },
-  { label: "Analytics", path: "/analytics", icon: BarChart3 },
+  { label: "Dashboard", path: "/overview", icon: LayoutDashboard },
+  { label: "AI Investigator", path: "/copilot", icon: BrainCircuit, badge: "AI" },
+  { label: "Case Explorer", path: "/cases", icon: FolderSearch },
+  { label: "Criminal Network", path: "/network", icon: Network },
+  { label: "Crime Map", path: "/gis", icon: Map },
+  { label: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
   { label: "Reports", path: "/reports", icon: FileText },
 ];
 
@@ -41,18 +39,48 @@ export const UTILITY_NAV_ITEMS: NavItem[] = [
 ];
 
 interface SidebarProps {
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
+  isPinned: boolean;
+  onTogglePin: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }
 
 export function Sidebar({
-  isCollapsed,
-  onToggleCollapse,
+  isPinned,
+  onTogglePin,
   mobileOpen,
   onCloseMobile,
 }: SidebarProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Desktop active expansion state: either explicitly pinned open, or hovered, or focused via keyboard
+  const isExpanded = isPinned || isHovered || hasKeyboardFocus;
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Graceful 120ms exit debounce to prevent jitter when moving cursor near borders
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 120);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const renderNavLink = (item: NavItem) => {
     const Icon = item.icon;
     const content = (
@@ -68,11 +96,23 @@ export function Sidebar({
           )
         }
       >
-        <Icon className="h-4 w-4 shrink-0 transition-colors group-hover:text-primary" />
-        {!isCollapsed && (
+        <Icon
+          className={cn(
+            "h-4 w-4 shrink-0 transition-colors",
+            item.path === "/overview" && "text-primary group-hover:text-primary",
+            item.path === "/copilot" && "text-[#63E6D2] group-hover:text-[#63E6D2]",
+            item.path === "/cases" && "text-secondary group-hover:text-secondary",
+            item.path === "/network" && "text-primary group-hover:text-primary",
+            item.path === "/gis" && "text-destructive group-hover:text-destructive",
+            item.path === "/analytics" && "text-secondary group-hover:text-secondary",
+            item.path === "/reports" && "text-[#A78BFA] group-hover:text-[#A78BFA]",
+            item.path === "/settings" && "text-sidebar-muted group-hover:text-foreground"
+          )}
+        />
+        {isExpanded && (
           <span className="truncate flex-1 tracking-wide font-sans">{item.label}</span>
         )}
-        {!isCollapsed && item.badge && (
+        {isExpanded && item.badge && (
           <span className="ml-auto rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-mono font-bold text-primary">
             {item.badge}
           </span>
@@ -80,7 +120,7 @@ export function Sidebar({
       </NavLink>
     );
 
-    if (isCollapsed) {
+    if (!isExpanded) {
       return (
         <Tooltip key={item.path} content={item.label} side="right">
           {content}
@@ -92,27 +132,47 @@ export function Sidebar({
   };
 
   const sidebarContent = (
-    <div className="flex h-full flex-col justify-between bg-sidebar border-r border-sidebar-border select-none">
+    <div
+      className={cn(
+        "flex h-full flex-col justify-between bg-sidebar border-r border-sidebar-border select-none transition-all duration-200 ease-out",
+        !isPinned && isHovered && "shadow-2xl shadow-black/80 border-r-border/80"
+      )}
+      onFocus={() => setHasKeyboardFocus(true)}
+      onBlur={(e) => {
+        // If focus moves outside the sidebar container, release keyboard focus
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setHasKeyboardFocus(false);
+        }
+      }}
+    >
       {/* Top Header */}
       <div>
-        <div className="flex h-14 items-center justify-between px-4 border-b border-sidebar-border/80">
-          <KestrelLogo showWordmark={!isCollapsed} size={22} />
-          <button
-            onClick={onToggleCollapse}
-            className="hidden md:flex h-7 w-7 items-center justify-center rounded border border-border/60 bg-surface-elevated text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronLeft className="h-3.5 w-3.5" />
-            )}
-          </button>
+        <div className="flex h-14 items-center justify-between px-3.5 border-b border-sidebar-border/80">
+          <KestrelLogo showWordmark={isExpanded} size={24} />
+          {isExpanded && (
+            <button
+              onClick={onTogglePin}
+              className={cn(
+                "hidden md:flex h-7 w-7 items-center justify-center rounded border transition-colors",
+                isPinned
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/60 bg-surface-elevated text-muted-foreground hover:text-foreground hover:border-primary/50"
+              )}
+              title={isPinned ? "Unpin sidebar (auto-collapse)" : "Pin sidebar open"}
+              aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar open"}
+            >
+              {isPinned ? (
+                <PinOff className="h-3.5 w-3.5" />
+              ) : (
+                <Pin className="h-3.5 w-3.5" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Tactical Sub-header */}
-        {!isCollapsed && (
-          <div className="px-4 py-2 text-[10px] font-mono tracking-widest text-muted-foreground uppercase border-b border-sidebar-border/40 flex items-center justify-between">
+        {isExpanded && (
+          <div className="px-4 py-2 text-[10px] font-mono tracking-widest text-muted-foreground uppercase border-b border-sidebar-border/40 flex items-center justify-between animate-fade-in">
             <span>OPERATIONAL SECTORS</span>
             <span className="h-1.5 w-1.5 rounded-full bg-positive animate-ping" />
           </div>
@@ -126,42 +186,40 @@ export function Sidebar({
 
       {/* Bottom Section */}
       <div className="border-t border-sidebar-border/80 p-2 space-y-1">
-        {!isCollapsed && (
-          <div className="px-3 py-1 text-[10px] font-mono tracking-widest text-muted-foreground uppercase">
+        {isExpanded && (
+          <div className="px-3 py-1 text-[10px] font-mono tracking-widest text-muted-foreground uppercase animate-fade-in">
             SYSTEM CONTROL
           </div>
         )}
         {UTILITY_NAV_ITEMS.map(renderNavLink)}
-
-        {/* Tactical Badge & Node Info */}
-        {!isCollapsed && (
-          <div className="mt-3 rounded border border-sidebar-border bg-surface-elevated/40 p-2.5 font-mono text-[10px] text-muted-foreground">
-            <div className="flex items-center justify-between mb-1">
-              <span className="flex items-center gap-1.5 text-foreground font-semibold">
-                <Shield className="h-3 w-3 text-primary" /> SOC NODE 01
-              </span>
-              <span className="text-positive">SECURE</span>
-            </div>
-            <div className="text-[9px] text-muted-foreground truncate">
-              JURISDICTION: BLR METRO
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
-      <aside
+      {/* Desktop Layout Rail & Auto-Hover Overlay Container */}
+      <div
         className={cn(
-          "hidden md:block transition-all duration-300 ease-in-out shrink-0 z-30",
-          isCollapsed ? "w-16" : "w-60"
+          "hidden md:block relative shrink-0 transition-[width] duration-200 ease-out z-30",
+          isPinned ? "w-60" : "w-16"
         )}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        {sidebarContent}
-      </aside>
+        <aside
+          className={cn(
+            "h-full transition-all duration-200 ease-out",
+            isPinned
+              ? "w-60 relative"
+              : isExpanded
+              ? "w-60 absolute top-0 left-0 bottom-0 z-40 bg-sidebar"
+              : "w-16 relative"
+          )}
+        >
+          {sidebarContent}
+        </aside>
+      </div>
 
       {/* Mobile Drawer Overlay */}
       {mobileOpen && (
