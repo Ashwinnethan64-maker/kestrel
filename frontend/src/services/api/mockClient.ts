@@ -6,7 +6,9 @@ import {
   BoundingBox,
   NetworkTopologyPayload,
   TacticalAnalyticsSummary,
-  ApiResponse
+  ApiResponse,
+  GangTerritory,
+  SpatioTemporalDensityResponse
 } from '@kestrel/shared';
 
 export class MockIntelClient {
@@ -141,6 +143,98 @@ export class MockIntelClient {
       meta: { timestamp: new Date().toISOString() }
     };
   }
+
+  async getGangTerritories(gang?: string): Promise<ApiResponse<GangTerritory[]>> {
+    const syndicates = this.syndicates || [];
+    const territories: GangTerritory[] = syndicates.map((s: any) => {
+      const center = s.operatingZones?.[0]?.center || { latitude: 12.9716, longitude: 77.5946 };
+      const d = 0.015;
+      return {
+        gangAffiliation: s.name,
+        caseCount: s.linkedCaseFirs?.length || 5,
+        suspectCount: s.suspectIds?.length || 3,
+        areaSqKm: Math.round((Math.PI * Math.pow(s.operatingZones?.[0]?.radiusMeters || 3000, 2) / 1000000) * 100) / 100,
+        centroid: center,
+        dominantCategory: s.primaryCrime || 'Organized Burglary',
+        threatLevel: (s.threatLevel || 'High') as any,
+        geojson: {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [[
+              [center.longitude - d, center.latitude - d],
+              [center.longitude + d, center.latitude - d],
+              [center.longitude + d, center.latitude + d],
+              [center.longitude - d, center.latitude + d],
+              [center.longitude - d, center.latitude - d]
+            ]]
+          },
+          properties: {
+            gangAffiliation: s.name,
+            threatLevel: s.threatLevel
+          }
+        }
+      };
+    });
+
+    const filtered = gang 
+      ? territories.filter((t) => t.gangAffiliation.toLowerCase().includes(gang.toLowerCase()))
+      : territories;
+
+    return {
+      success: true,
+      data: filtered,
+      meta: { total: filtered.length, timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getSpatialDensity(): Promise<ApiResponse<SpatioTemporalDensityResponse>> {
+    const grid = [
+      { cellId: 'CELL-1', latitude: 12.9784, longitude: 77.6408, totalIncidents: 28, criticalCount: 6, dominantCategory: 'Armed Robbery', densityWeight: 1.0 },
+      { cellId: 'CELL-2', latitude: 12.9352, longitude: 77.6245, totalIncidents: 24, criticalCount: 4, dominantCategory: 'House Burglary', densityWeight: 0.85 },
+      { cellId: 'CELL-3', latitude: 12.9698, longitude: 77.7500, totalIncidents: 21, criticalCount: 8, dominantCategory: 'Cyber Fraud', densityWeight: 0.75 },
+      { cellId: 'CELL-4', latitude: 13.0075, longitude: 77.6959, totalIncidents: 16, criticalCount: 3, dominantCategory: 'Vehicle Theft', densityWeight: 0.57 }
+    ];
+
+    const temporalMatrix = [];
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        temporalMatrix.push({
+          dayOfWeek: d,
+          hourOfDay: h,
+          incidentCount: (h >= 1 && h <= 4) || (h >= 20 && h <= 23) ? 12 : 3
+        });
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        grid,
+        temporalMatrix,
+        peakWindow: {
+          dayOfWeek: 6,
+          hourOfDay: 21,
+          incidentCount: 29,
+          description: 'Saturday around 21:00 hrs (29 active cases)'
+        },
+        hotspots: [
+          {
+            id: 'HOTSPOT-1',
+            stationName: 'Indiranagar Sector 1',
+            district: 'Bengaluru East',
+            center: { latitude: 12.9784, longitude: 77.6408 },
+            radiusMeters: 600,
+            incidentCount: 28,
+            dominantCrime: 'Armed Robbery',
+            riskScore: 100
+          }
+        ]
+      },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
 }
 
 export const mockClient = new MockIntelClient();
+

@@ -2,7 +2,15 @@ import { Router } from 'express';
 import { db } from '../db';
 import { casesFir } from '../db/schema';
 import { and, eq, ilike, sql } from 'drizzle-orm';
-import type { ApiResponse, FIRCase } from '@kestrel/shared';
+import type { 
+  ApiResponse, 
+  FIRCase, 
+  GangTerritory, 
+  SpatialGridCell, 
+  TemporalDensityCell, 
+  SpatioTemporalDensityResponse, 
+  SpatialHotspot 
+} from '@kestrel/shared';
 
 export const spatialRouter = Router();
 
@@ -127,3 +135,236 @@ spatialRouter.get('/radius', async (req, res) => {
     res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 });
+
+// GET /api/spatial/territories - Gang and syndicate territorial operating zones via ST_ConcaveHull
+spatialRouter.get('/territories', async (req, res) => {
+  try {
+    const { gang, minCases = '2' } = req.query;
+    const minCasesNum = Math.max(1, parseInt(String(minCases), 10) || 2);
+
+    let filterSql = sql`WHERE a.gang_affiliation IS NOT NULL AND a.gang_affiliation != ''`;
+    if (gang) {
+      filterSql = sql`WHERE a.gang_affiliation ILIKE ${'%' + String(gang) + '%'}`;
+    }
+
+    const rows = await db.execute<{
+      gang_affiliation: string;
+      case_count: number;
+      suspect_count: number;
+      dominant_category: string;
+      critical_count: number;
+      area_sq_km: number;
+      centroid_geojson: string;
+      hull_geojson: string;
+    }>(sql`
+      SELECT 
+        a.gang_affiliation,
+        COUNT(DISTINCT c.id)::int as case_count,
+        COUNT(DISTINCT a.id)::int as suspect_count,
+        MODE() WITHIN GROUP (ORDER BY c.crime_category) as dominant_category,
+        COUNT(*) FILTER (WHERE c.priority = 'Critical')::int as critical_count,
+        ROUND((ST_Area(
+          CASE 
+            WHEN COUNT(DISTINCT c.id) >= 3 THEN ST_ConcaveHull(ST_Collect(c.location_geom), 0.7)
+            ELSE ST_Buffer(ST_Collect(c.location_geom), 0.005)
+          END::geography) / 1000000.0)::numeric, 2)::float as area_sq_km,
+        ST_AsGeoJSON(ST_Centroid(ST_Collect(c.location_geom))) as centroid_geojson,
+        ST_AsGeoJSON(
+          CASE 
+            WHEN COUNT(DISTINCT c.id) >= 3 THEN ST_ConcaveHull(ST_Collect(c.location_geom), 0.7)
+            ELSE ST_Buffer(ST_Collect(c.location_geom), 0.005)
+          END
+        ) as hull_geojson
+      FROM entities_accused a
+      JOIN case_accused_junction j ON a.id = j.accused_id
+      JOIN cases_fir c ON j.case_id = c.id
+      ${filterSql}
+      GROUP BY a.gang_affiliation
+      HAVING COUNT(DISTINCT c.id) >= ${minCasesNum}
+      ORDER BY case_count DESC;
+    `);
+
+    const territories: GangTerritory[] = rows.map((r) => {
+      let centroid = { latitude: 12.9716, longitude: 77.5946 };
+      try {
+        const parsed = JSON.parse(r.centroid_geojson);
+        if (parsed.coordinates && parsed.coordinates.length === 2) {
+          centroid = { latitude: parsed.coordinates[1], longitude: parsed.coordinates[0] };
+        }
+      } catch (e) {}
+
+      let geometry = { type: 'Polygon' as const, coordinates: [] };
+      try {
+        geometry = JSON.parse(r.hull_geojson);
+      } catch (e) {}
+
+      const criticalRatio = r.case_count > 0 ? r.critical_count / r.case_count : 0;
+      let threatLevel: 'Critical' | 'High' | 'Medium' | 'Low' = 'Medium';
+      if (r.critical_count >= 5 || criticalRatio > 0.3) {
+        threatLevel = 'Critical';
+      } else if (r.case_count >= 5 || criticalRatio > 0.15) {
+        threatLevel = 'High';
+      }
+
+      return {
+        gangAffiliation: r.gang_affiliation,
+        caseCount: Number(r.case_count),
+        suspectCount: Number(r.suspect_count),
+        areaSqKm: Number(r.area_sq_km) || 0,
+        centroid,
+        dominantCategory: r.dominant_category || 'General Crime',
+        threatLevel,
+        geojson: {
+          type: 'Feature',
+          geometry,
+          properties: {
+            gangAffiliation: r.gang_affiliation,
+            caseCount: Number(r.case_count),
+            suspectCount: Number(r.suspect_count),
+            dominantCategory: r.dominant_category,
+            threatLevel,
+            areaSqKm: Number(r.area_sq_km) || 0
+          }
+        }
+      };
+    });
+
+    const response: ApiResponse<GangTerritory[]> = {
+      success: true,
+      data: territories,
+      meta: {
+        total: territories.length,
+        timestamp: new Date().toISOString()
+      }
+    };
+    res.json(response);
+  } catch (error: any) {
+    console.error('[Spatial Territories Error]:', error);
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+  }
+});
+
+// GET /api/spatial/density - Spatio-temporal grid clustering & temporal crime rhythm matrix
+spatialRouter.get('/density', async (req, res) => {
+  try {
+    const { crimeCategory, district, priority, step = '0.01' } = req.query;
+    const stepNum = Math.max(0.002, Math.min(0.05, parseFloat(String(step)) || 0.01));
+
+    const whereConditions = [];
+    if (crimeCategory) {
+      whereConditions.push(sql`crime_category ILIKE ${'%' + String(crimeCategory) + '%'}`);
+    }
+    if (district) {
+      whereConditions.push(sql`district ILIKE ${'%' + String(district) + '%'}`);
+    }
+    if (priority) {
+      whereConditions.push(sql`priority = ${String(priority)}`);
+    }
+
+    const whereSql = whereConditions.length > 0 
+      ? sql`WHERE ${sql.join(whereConditions, sql` AND `)}` 
+      : sql``;
+
+    // 1. Spatial Grid Bucketing via ST_SnapToGrid
+    const gridRows = await db.execute<{
+      cell_lat: number;
+      cell_lng: number;
+      total_incidents: number;
+      critical_count: number;
+      dominant_category: string;
+    }>(sql`
+      SELECT 
+        ROUND(ST_Y(ST_Centroid(ST_Collect(location_geom)))::numeric, 4)::float as cell_lat,
+        ROUND(ST_X(ST_Centroid(ST_Collect(location_geom)))::numeric, 4)::float as cell_lng,
+        COUNT(*)::int as total_incidents,
+        COUNT(*) FILTER (WHERE priority = 'Critical')::int as critical_count,
+        MODE() WITHIN GROUP (ORDER BY crime_category) as dominant_category
+      FROM cases_fir
+      ${whereSql}
+      GROUP BY ST_SnapToGrid(location_geom, ${stepNum})
+      ORDER BY total_incidents DESC;
+    `);
+
+    const maxIncidents = gridRows.reduce((m, r) => Math.max(m, Number(r.total_incidents)), 1);
+
+    const grid: SpatialGridCell[] = gridRows.map((r, idx) => ({
+      cellId: `CELL-${idx + 1}`,
+      latitude: Number(r.cell_lat),
+      longitude: Number(r.cell_lng),
+      totalIncidents: Number(r.total_incidents),
+      criticalCount: Number(r.critical_count),
+      dominantCategory: r.dominant_category || 'General Crime',
+      densityWeight: Math.round((Number(r.total_incidents) / maxIncidents) * 100) / 100
+    }));
+
+    // 2. Diurnal Temporal Distribution (Day of Week vs Hour of Day)
+    const temporalRows = await db.execute<{
+      day_of_week: number;
+      hour_of_day: number;
+      incident_count: number;
+    }>(sql`
+      SELECT 
+        EXTRACT(DOW FROM incident_date)::int as day_of_week,
+        EXTRACT(HOUR FROM incident_date)::int as hour_of_day,
+        COUNT(*)::int as incident_count
+      FROM cases_fir
+      ${whereConditions.length > 0 ? sql`WHERE ${sql.join(whereConditions, sql` AND `)} AND incident_date IS NOT NULL` : sql`WHERE incident_date IS NOT NULL`}
+      GROUP BY day_of_week, hour_of_day
+      ORDER BY day_of_week ASC, hour_of_day ASC;
+    `);
+
+    const temporalMatrix: TemporalDensityCell[] = temporalRows.map((r) => ({
+      dayOfWeek: Number(r.day_of_week),
+      hourOfDay: Number(r.hour_of_day),
+      incidentCount: Number(r.incident_count)
+    }));
+
+    // 3. Peak Window Identification
+    let peak = { dayOfWeek: 5, hourOfDay: 20, incidentCount: 0 };
+    for (const t of temporalMatrix) {
+      if (t.incidentCount > peak.incidentCount) {
+        peak = { dayOfWeek: t.dayOfWeek, hourOfDay: t.hourOfDay, incidentCount: t.incidentCount };
+      }
+    }
+
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const peakDescription = `${DAY_NAMES[peak.dayOfWeek]} around ${String(peak.hourOfDay).padStart(2, '0')}:00 hrs (${peak.incidentCount} active cases)`;
+
+    // 4. Hotspots (Top 5 grid cells as tactical hotspots)
+    const hotspots: SpatialHotspot[] = grid.slice(0, 5).map((g, idx) => ({
+      id: `HOTSPOT-${idx + 1}`,
+      stationName: `Sector ${idx + 1} High-Density Zone`,
+      district: 'Bengaluru Command Area',
+      center: { latitude: g.latitude, longitude: g.longitude },
+      radiusMeters: Math.round(stepNum * 111000 / 2),
+      incidentCount: g.totalIncidents,
+      dominantCrime: g.dominantCategory,
+      riskScore: Math.round(g.densityWeight * 100)
+    }));
+
+    const data: SpatioTemporalDensityResponse = {
+      grid,
+      temporalMatrix,
+      peakWindow: {
+        ...peak,
+        description: peakDescription
+      },
+      hotspots
+    };
+
+    res.json({
+      success: true,
+      data,
+      meta: {
+        totalCells: grid.length,
+        maxIncidents,
+        gridStepDeg: stepNum,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('[Spatial Density Error]:', error);
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+  }
+});
+

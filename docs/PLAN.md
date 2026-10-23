@@ -267,8 +267,8 @@ gantt
 
 ##### Task 2.1B: PostGIS Advanced Spatial Pipeline
 - [x] **Sub-task 2.1B.1**: Implement `ST_DWithin` radius search endpoint (`GET /api/spatial/radius?lat=...&lng=...&radiusMeters=...`).
-- [ ] **Sub-task 2.1B.2**: Implement `ST_ConcaveHull` territorial polygon generation to compute gang operating zones.
-- [ ] **Sub-task 2.1B.3**: Implement spatio-temporal incident density aggregation.
+- [x] **Sub-task 2.1B.2**: Implement `ST_ConcaveHull` territorial polygon generation to compute gang operating zones (`GET /api/spatial/territories`).
+- [x] **Sub-task 2.1B.3**: Implement spatio-temporal incident density aggregation (`GET /api/spatial/density`).
 
 ##### Task 2.2B: Graph Relational Topology Engine
 - [x] **Sub-task 2.2B.1**: Build dynamic graph traversal queries uncovering accomplice linkages (`GET /api/network/topology` & `GET /api/network/accused/:id`).

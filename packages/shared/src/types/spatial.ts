@@ -35,3 +35,50 @@ export interface SpatialClusterSummary {
   involvedGangNames: string[];
   suggestedPatrolCheckpoints: GeoCoordinate[];
 }
+
+export interface GangTerritory {
+  gangAffiliation: string;
+  caseCount: number;
+  suspectCount: number;
+  areaSqKm: number;
+  centroid: GeoCoordinate;
+  dominantCategory: string;
+  threatLevel: 'Critical' | 'High' | 'Medium' | 'Low';
+  geojson: {
+    type: 'Feature';
+    geometry: {
+      type: 'Polygon' | 'MultiPolygon';
+      coordinates: any;
+    };
+    properties: Record<string, any>;
+  };
+}
+
+export interface SpatialGridCell {
+  cellId: string;
+  latitude: number;
+  longitude: number;
+  totalIncidents: number;
+  criticalCount: number;
+  dominantCategory: string;
+  densityWeight: number; // 0.0 - 1.0 (normalized for Leaflet heatmaps / radar)
+}
+
+export interface TemporalDensityCell {
+  dayOfWeek: number; // 0 = Sunday, 6 = Saturday
+  hourOfDay: number; // 0 - 23
+  incidentCount: number;
+}
+
+export interface SpatioTemporalDensityResponse {
+  grid: SpatialGridCell[];
+  temporalMatrix: TemporalDensityCell[];
+  peakWindow: {
+    dayOfWeek: number;
+    hourOfDay: number;
+    incidentCount: number;
+    description: string;
+  };
+  hotspots: SpatialHotspot[];
+}
+

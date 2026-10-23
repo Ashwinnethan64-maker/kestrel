@@ -1,9 +1,93 @@
 import { mockClient } from './mockClient';
+import type { 
+  ApiResponse, 
+  FIRCase, 
+  AccusedSuspect, 
+  CaseFilterParams, 
+  BoundingBox, 
+  NetworkTopologyPayload, 
+  TacticalAnalyticsSummary,
+  GangTerritory,
+  SpatioTemporalDensityResponse
+} from '@kestrel/shared';
 
 const isLiveMode = import.meta.env.VITE_API_SOURCE === 'live';
 
-export const apiClient = mockClient; // By default routes to mock client during Phase 0 & 1
+class LiveOrMockClient {
+  private isLive: boolean = isLiveMode;
 
+  setMode(mode: 'mock' | 'live') {
+    this.isLive = mode === 'live';
+    console.log(`[API Client] Active source mode: ${mode}`);
+  }
+
+  async getCases(filters?: CaseFilterParams): Promise<ApiResponse<FIRCase[]>> {
+    if (!this.isLive) return mockClient.getCases(filters);
+    const query = new URLSearchParams();
+    if (filters?.policeStation) query.set('policeStation', filters.policeStation);
+    if (filters?.crimeCategory) query.set('crimeCategory', filters.crimeCategory);
+    if (filters?.priority) query.set('priority', filters.priority);
+    if (filters?.status) query.set('status', filters.status);
+    if (filters?.searchQuery) query.set('searchQuery', filters.searchQuery);
+    const res = await fetch(`/api/cases?${query.toString()}`);
+    return res.json();
+  }
+
+  async getCaseById(id: string): Promise<ApiResponse<FIRCase | null>> {
+    if (!this.isLive) return mockClient.getCaseById(id);
+    const res = await fetch(`/api/cases/${encodeURIComponent(id)}`);
+    return res.json();
+  }
+
+  async getAccused(searchQuery?: string): Promise<ApiResponse<AccusedSuspect[]>> {
+    if (!this.isLive) return mockClient.getAccused(searchQuery);
+    const query = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
+    const res = await fetch(`/api/accused${query}`);
+    return res.json();
+  }
+
+  async getSpatialIncidents(bounds?: BoundingBox | null): Promise<ApiResponse<FIRCase[]>> {
+    if (!this.isLive) return mockClient.getSpatialIncidents(bounds);
+    let query = '';
+    if (bounds) {
+      const [[south, west], [north, east]] = bounds;
+      query = `?south=${south}&west=${west}&north=${north}&east=${east}`;
+    }
+    const res = await fetch(`/api/spatial/incidents${query}`);
+    return res.json();
+  }
+
+  async getNetworkTopology(focusedSuspectId?: string | null): Promise<ApiResponse<NetworkTopologyPayload>> {
+    if (!this.isLive) return mockClient.getNetworkTopology(focusedSuspectId);
+    const query = focusedSuspectId ? `?focusedSuspectId=${encodeURIComponent(focusedSuspectId)}` : '';
+    const res = await fetch(`/api/network/topology${query}`);
+    return res.json();
+  }
+
+  async getTacticalAnalytics(): Promise<ApiResponse<TacticalAnalyticsSummary>> {
+    if (!this.isLive) return mockClient.getTacticalAnalytics();
+    const res = await fetch('/api/analytics/summary');
+    return res.json();
+  }
+
+  async getGangTerritories(gang?: string): Promise<ApiResponse<GangTerritory[]>> {
+    if (!this.isLive) return mockClient.getGangTerritories(gang);
+    const query = gang ? `?gang=${encodeURIComponent(gang)}` : '';
+    const res = await fetch(`/api/spatial/territories${query}`);
+    return res.json();
+  }
+
+  async getSpatialDensity(params?: { crimeCategory?: string; step?: number }): Promise<ApiResponse<SpatioTemporalDensityResponse>> {
+    if (!this.isLive) return mockClient.getSpatialDensity();
+    const query = new URLSearchParams();
+    if (params?.crimeCategory) query.set('crimeCategory', params.crimeCategory);
+    if (params?.step) query.set('step', String(params.step));
+    const res = await fetch(`/api/spatial/density?${query.toString()}`);
+    return res.json();
+  }
+}
+
+export const apiClient = new LiveOrMockClient();
 export function setApiMode(mode: 'mock' | 'live') {
-  console.log(`[API Client] Active source mode: ${mode}`);
+  apiClient.setMode(mode);
 }
