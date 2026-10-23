@@ -44,7 +44,12 @@
     - Implemented `backend/src/routes/network.ts` with dynamic co-accused graph algorithm computing edge weights directly from `case_accused_junction`, plus focused ego-network extraction.
     - Implemented `backend/src/routes/accused.ts` for suspect dossier lookups and linked case rosters.
     - Implemented `backend/src/routes/analytics.ts` for real-time KPI metrics and station clearance rates.
-    - Verified all endpoints via live HTTP integration tests against `http://localhost:3000`.
+  - **Task 1.4B: Groq Cloud LLM Service Spike** (Complete — 2026-10-23):
+    - Implemented `backend/src/services/llm.ts` wrapping Groq Cloud SDK (`llama-3.3-70b-versatile`) with an intelligent grounded fallback for unauthenticated and offline resilience.
+    - Upgraded `backend/src/routes/copilot.ts` with `POST /api/copilot/query` ingesting `CopilotPromptEnvelope` and dynamically retrieving live case dossiers, suspect profiles, and evidence items from PostgreSQL.
+    - Implemented streaming Server-Sent Events (SSE) emitting token chunks, FIR citations (`citedFirNumbers`), suggested actions, and bilingual English/Kannada investigation context.
+    - Verified SSE stream output with curl across focused cases, focused suspects, and Kannada prompts.
+
 
 
 
