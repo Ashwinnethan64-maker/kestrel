@@ -27,6 +27,7 @@ import {
   MapPin,
   Clock,
   HelpCircle,
+  Square,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -34,7 +35,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { apiClient } from "@/services/api/client";
-import { FIRCase, AccusedSuspect } from "@kestrel/shared";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
+import type { FIRCase, AccusedSuspect, CopilotPromptEnvelope } from "@kestrel/shared";
 
 interface ChatMessage {
   id: string;
@@ -155,11 +157,21 @@ export function CopilotPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [language, setLanguage] = useState<"EN" | "KN">("EN");
 
-  // Export Modal
+  // Export Modal & Toast state
   const [showExportModal, setShowExportModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const [generatingMsgId, setGeneratingMsgId] = useState<string | null>(null);
+  const abortRef = useRef<(() => void) | null>(null);
   const messageStreamEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current();
+      }
+    };
+  }, []);
 
   // Load ground datasets
   useEffect(() => {
@@ -269,7 +281,7 @@ export function CopilotPage() {
     ];
   }, [evidenceList, relatedCases]);
 
-  // Submission handler
+  // Submission handler with live streaming backend
   const handleSend = (textToSend?: string) => {
     const q = textToSend || inputQuery;
     if (!q.trim() || isGenerating) return;
@@ -281,10 +293,20 @@ export function CopilotPage() {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    const updatedMessages = [...messages, userMsg];
+    const asstId = `asst-${Date.now()}`;
+    const asstPlaceholder: ChatMessage = {
+      id: asstId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      citations: [],
+    };
+
+    const updatedMessages = [...messages, userMsg, asstPlaceholder];
     setMessages(updatedMessages);
     setInputQuery("");
     setIsGenerating(true);
+    setGeneratingMsgId(asstId);
 
     // Update active thread preview & messages
     setThreads((prev) =>
@@ -300,68 +322,83 @@ export function CopilotPage() {
       )
     );
 
-    // Grounded Copilot response generation
-    setTimeout(() => {
-      let responseText = "";
-      let citations: { firNumber: string; title: string }[] = [];
-      const lower = q.toLowerCase();
+    // Build context envelope from Zustand investigation store
+    const contextEnv = useInvestigationContext.getState().getPromptContextEnvelope();
+    const envelope: CopilotPromptEnvelope = {
+      query: q,
+      language: language === "KN" ? "kn" : "en",
+      activeLens: contextEnv.activeLens || "dossier",
+      focusedCaseId: caseIdParam || contextEnv.focusedCaseId || undefined,
+      focusedSuspectId: contextEnv.focusedSuspectId || undefined,
+      activeBoundingBox: contextEnv.activeBoundingBox || undefined,
+      activeFilters: contextEnv.activeFilters,
+      temporalWindow: contextEnv.temporalWindow,
+    };
 
-      if (lower.includes("indiranagar") || lower.includes("burglary") || lower.includes("robbery")) {
-        responseText =
-          language === "KN"
-            ? "ಇಂದಿರಾನಗರ ವಲಯದ ಪರಿಶೀಲನೆಯಲ್ಲಿ 3 ಸಶಸ್ತ್ರ ದರೋಡೆ ಮತ್ತು ಕನ್ನಗಳವು ಪ್ರಕರಣಗಳು ದಾಖಲಾಗಿವೆ. ಆರೋಪಿಗಳು KA-04-E-1234 ಕಪ್ಪು ಕಾರನ್ನು ಬಳಸಿದ್ದಾರೆ. ರಾಜು ನಾಯಕ್ ಗ್ಯಾಂಗ್ ಈ ಅಪರಾಧಗಳಲ್ಲಿ ಭಾಗಿಯಾಗಿರುವ ಶಂಕೆಯಿದೆ."
-            : "Analysis of the Indiranagar jurisdictional sector correlates 3 commercial burglaries and armed robberies within the past 48 hours. Primary modus operandi: nighttime retail entrance forced with hydraulic cutters and getaway sedan KA-04-E-1234. Associated repeat offender Raju Nayak ('Snake') bailed 4 days prior.";
-        citations = [
-          { firNumber: "FIR-2024-INDR-0102", title: "Armed Robbery on 100 Feet Road" },
-          { firNumber: "FIR-2024-INDR-0105", title: "Commercial Store Heist" },
-        ];
-      } else if (lower.includes("vehicle") || lower.includes("ka-04") || lower.includes("car")) {
-        responseText =
-          language === "KN"
-            ? "ವಾಹನ ನೋಂದಣಿ KA-04-E-1234 (ಕಪ್ಪು ವರ್ನಾ) ಕೆ.ಆರ್. ಪುರಂನಲ್ಲಿ ಕಳವು ಮಾಡಲಾಗಿದ್ದು, ನಂತರ ಇಂದಿರಾನಗರ ದರೋಡೆಗೆ ಬಳಸಲಾಗಿದೆ ಎಂದು ತನಿಖೆಯಲ್ಲಿ ದೃಢಪಟ್ಟಿದೆ."
-            : "Cross-referencing vehicle telemetry: Black sedan KA-04-E-1234 was stolen via electronic CAN-bus key bypass in K.R. Puram residential parking lot (FIR-2024-KRP-0215) and subsequently deployed as the tactical getaway vehicle in the Indiranagar Armed Robbery.";
-        citations = [
-          { firNumber: "FIR-2024-KRP-0215", title: "Vehicle Theft at K.R. Puram" },
-          { firNumber: "FIR-2024-INDR-0102", title: "Armed Robbery Indiranagar Sector 2" },
-        ];
-      } else if (lower.includes("cyber") || lower.includes("fraud") || lower.includes("whitefield")) {
-        responseText =
-          language === "KN"
-            ? "ವೈಟ್‌ಫೀಲ್ಡ್ ಸೈಬರ್ ಅಪರಾಧ ತನಿಖೆಯಲ್ಲಿ 24 ಲಕ್ಷ ರೂ. ಬ್ಯಾಂಕಿಂಗ್ ವರ್ಗಾವಣೆ ಪತ್ತೆಯಾಗಿದೆ. ಅಪರಾಧ ಸಂಬಂಧಿ APK ಬೈನರಿ 'ApexCrypto' ಪತ್ತೆಯಾಗಿದೆ."
-            : "Financial intelligence audit confirms Whitefield Cyber Banking Ring routes illicit extortion capital through 6 layered bank mule accounts. Seized mobile devices verify malicious Android binary 'ApexCrypto' communicating with C2 infrastructure.";
-        citations = [
-          { firNumber: "FIR-2024-WFD-0301", title: "Corporate Phishing & Wire Fraud" },
-          { firNumber: "FIR-2024-WFD-0305", title: "Fake Crypto Trading App Syndicate" },
-        ];
-      } else {
-        responseText =
-          language === "KN"
-            ? "ರಾಜ್ಯ ಅಪರಾಧ ದಾಖಲೆಗಳ ಪರಿಶೀಲನೆ: ಒಟ್ಟು 60ಕ್ಕೂ ಹೆಚ್ಚು ಎಫ್‌ಐಆರ್ ಪ್ರಕರಣಗಳು ಮತ್ತು 10 ಪ್ರಮುಖ ಆರೋಪಿಗಳ ಮಾಹಿತಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ಕಾನೂನು ಸೆಕ್ಷನ್‌ಗಳು: IPC 379, IPC 392, ಮತ್ತು IPC 420."
-            : `Grounded Intelligence Synthesis: Query cross-matched across active FIR cases and linked syndicate networks. Current clearance rate stands at 74.6% with high-priority statutory acts registered under IPC 392, IPC 379, and IPC 120B.`;
-        citations = [{ firNumber: "FIR-2024-INDR-0102", title: "Crime Ledger Record" }];
-      }
+    let accumulatedText = "";
+    let accumulatedCitations: { firNumber: string; title: string }[] = [];
 
-      const assistantMsg: ChatMessage = {
-        id: `asst-${Date.now()}`,
-        role: "assistant",
-        content: responseText,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        citations,
-        isDemo: true,
-      };
+    const cancel = apiClient.streamCopilotQuery(envelope, {
+      onToken: (token) => {
+        accumulatedText += token;
+        setMessages((prev) =>
+          prev.map((m) => (m.id === asstId ? { ...m, content: accumulatedText } : m))
+        );
+      },
+      onCitation: (firNumbers) => {
+        const newCitations = firNumbers.map((fir) => {
+          const match = cases.find((c) => c.firNumber === fir || c.id === fir);
+          return {
+            firNumber: fir,
+            title: match ? `${match.crimeCategory} - ${match.policeStation}` : "Verified Incident Record",
+          };
+        });
+        accumulatedCitations = newCitations;
+        setMessages((prev) =>
+          prev.map((m) => (m.id === asstId ? { ...m, citations: newCitations } : m))
+        );
+      },
+      onAction: (action) => {
+        console.log("[Copilot Suggested Action Triggered]:", action);
+      },
+      onDone: () => {
+        setIsGenerating(false);
+        setGeneratingMsgId(null);
+        abortRef.current = null;
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === activeThreadId
+              ? {
+                  ...t,
+                  preview: accumulatedText ? accumulatedText.slice(0, 60) + "..." : t.preview,
+                  messages: t.messages.map((m) =>
+                    m.id === asstId
+                      ? { ...m, content: accumulatedText, citations: accumulatedCitations }
+                      : m
+                  ),
+                }
+              : t
+          )
+        );
+      },
+      onError: (err) => {
+        console.error("[Copilot Stream Error]:", err);
+        setIsGenerating(false);
+        setGeneratingMsgId(null);
+        abortRef.current = null;
+      },
+    });
 
-      const finalMessages = [...updatedMessages, assistantMsg];
-      setMessages(finalMessages);
-      setIsGenerating(false);
+    abortRef.current = cancel;
+  };
 
-      setThreads((prev) =>
-        prev.map((t) =>
-          t.id === activeThreadId
-            ? { ...t, messages: finalMessages }
-            : t
-        )
-      );
-    }, 600);
+  const handleStopGenerating = () => {
+    if (abortRef.current) {
+      abortRef.current();
+      abortRef.current = null;
+    }
+    setIsGenerating(false);
+    setGeneratingMsgId(null);
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -691,7 +728,19 @@ export function CopilotPage() {
 
                         {/* Message content */}
                         <div className="text-xs font-sans leading-relaxed whitespace-pre-wrap">
-                          {m.content}
+                          {m.content ? (
+                            <>
+                              {m.content}
+                              {isAsst && isGenerating && m.id === generatingMsgId && (
+                                <span className="inline-block w-1.5 h-3.5 bg-primary ml-1 animate-pulse align-middle" />
+                              )}
+                            </>
+                          ) : isAsst && isGenerating && m.id === generatingMsgId ? (
+                            <div className="flex items-center gap-2 text-primary font-mono text-xs py-1">
+                              <span className="h-2 w-2 rounded-full bg-primary animate-ping" />
+                              <span>Synthesizing intelligence & grounding FIR records...</span>
+                            </div>
+                          ) : null}
                         </div>
 
                         {/* Verified Case Citations */}
@@ -799,16 +848,29 @@ export function CopilotPage() {
                   disabled={isGenerating}
                   className="flex-1 rounded border border-border bg-surface-elevated/70 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary font-mono"
                 />
-                <Button
-                  type="submit"
-                  variant="tactical"
-                  size="sm"
-                  disabled={isGenerating || !inputQuery.trim()}
-                  className="gap-1.5 font-mono text-xs h-9 px-4 shrink-0"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  <span>SEND</span>
-                </Button>
+                {isGenerating ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleStopGenerating}
+                    className="gap-1.5 font-mono text-xs h-9 px-4 shrink-0 bg-red-600/90 hover:bg-red-600 text-white"
+                  >
+                    <Square className="h-3 w-3 fill-current" />
+                    <span>STOP</span>
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    variant="tactical"
+                    size="sm"
+                    disabled={!inputQuery.trim()}
+                    className="gap-1.5 font-mono text-xs h-9 px-4 shrink-0"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    <span>SEND</span>
+                  </Button>
+                )}
               </form>
             </div>
           </Card>

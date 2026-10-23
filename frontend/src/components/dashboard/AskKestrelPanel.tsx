@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Send, HelpCircle, CheckCircle, ArrowRight, ShieldAlert } from "lucide-react";
+import { Sparkles, Send, HelpCircle, CheckCircle, ArrowRight, ShieldAlert, Square } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { apiClient } from "@/services/api/client";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
+import type { CopilotPromptEnvelope } from "@kestrel/shared";
 
 const SUGGESTED_QUERIES = [
   "Summarise patterns in the current dataset",
@@ -22,33 +25,64 @@ export function AskKestrelPanel({ onExecuteQuery }: AskKestrelPanelProps) {
   const [activeResponse, setActiveResponse] = useState<string | null>(
     "Ready for investigative analysis. Type a query or select a suggestion below to probe crime patterns, syndicate linkages, or statutory sections."
   );
+  const abortRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current();
+      }
+    };
+  }, []);
 
   const handleSend = (userQuery?: string) => {
     const q = userQuery || query;
-    if (!q.trim()) return;
+    if (!q.trim() || isAnswering) return;
 
     setQuery(q);
     setIsAnswering(true);
+    setActiveResponse("");
 
-    // Provide contextual, grounded demo intelligence response
-    setTimeout(() => {
-      setIsAnswering(false);
-      if (q.includes("Summarise patterns") || q.includes("highest recorded")) {
-        setActiveResponse(
-          "Analysis indicates a pronounced cluster of Two-Wheeler Thefts and Night Burglaries in the Indiranagar & K.R. Puram divisions. 38.5% of incidents feature recurring Modus Operandi (forced window latch entry, targeting jewelry). Two repeat suspects with prior history under IPC 379/457 are active within 2.5km."
-        );
-      } else if (q.includes("links between") || q.includes("entities")) {
-        setActiveResponse(
-          "Cross-case entity analysis reveals co-accused linkages between Raju Nayak (SUSP-001) and Mohammed Farooq (SUSP-002). Both are flagged in FIR 102/24 and FIR 215/24, linked to a shared getaway vehicle (KA-04-E-1234) sighted at Hebbal Toll."
-        );
-      } else {
-        setActiveResponse(
-          `Grounded Intelligence: For query "${q}", 14 matching FIR cases were cross-examined across Bengaluru North and East sectors. Incident velocity indicates a 14.2% month-over-month decrease following targeted checkpoint positioning.`
-        );
-      }
+    const contextEnv = useInvestigationContext.getState().getPromptContextEnvelope();
+    const envelope: CopilotPromptEnvelope = {
+      query: q,
+      language: "en",
+      activeLens: contextEnv.activeLens || "geo",
+      focusedCaseId: contextEnv.focusedCaseId || undefined,
+      focusedSuspectId: contextEnv.focusedSuspectId || undefined,
+      activeBoundingBox: contextEnv.activeBoundingBox || undefined,
+      activeFilters: contextEnv.activeFilters,
+      temporalWindow: contextEnv.temporalWindow,
+    };
 
-      if (onExecuteQuery) onExecuteQuery(q);
-    }, 450);
+    let accumulatedText = "";
+
+    const cancel = apiClient.streamCopilotQuery(envelope, {
+      onToken: (token) => {
+        accumulatedText += token;
+        setActiveResponse(accumulatedText);
+      },
+      onDone: () => {
+        setIsAnswering(false);
+        abortRef.current = null;
+        if (onExecuteQuery) onExecuteQuery(q);
+      },
+      onError: (err) => {
+        console.error("[AskKestrel Stream Error]:", err);
+        setIsAnswering(false);
+        abortRef.current = null;
+      },
+    });
+
+    abortRef.current = cancel;
+  };
+
+  const handleStop = () => {
+    if (abortRef.current) {
+      abortRef.current();
+      abortRef.current = null;
+    }
+    setIsAnswering(false);
   };
 
   return (
@@ -73,14 +107,19 @@ export function AskKestrelPanel({ onExecuteQuery }: AskKestrelPanelProps) {
       <CardContent className="space-y-3 pt-1 flex-1 flex flex-col justify-between">
         {/* Output response bubble */}
         <div className="rounded-md border border-border bg-surface-elevated/70 p-3 font-mono text-xs text-foreground/90 leading-relaxed min-h-[90px] flex flex-col justify-between">
-          {isAnswering ? (
+          {isAnswering && !activeResponse ? (
             <div className="flex items-center gap-2 text-primary text-xs py-4">
               <span className="h-2 w-2 rounded-full bg-primary animate-ping" />
               <span>Analyzing case knowledge graph & vector embeddings...</span>
             </div>
           ) : (
             <>
-              <div>{activeResponse}</div>
+              <div>
+                {activeResponse}
+                {isAnswering && (
+                  <span className="inline-block w-1.5 h-3.5 bg-primary ml-1 animate-pulse align-middle" />
+                )}
+              </div>
               <div className="mt-2 pt-2 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
                 <span className="text-primary font-semibold">Strict Grounding: ZERO Hallucinations</span>
                 <Link to="/copilot" className="hover:text-primary transition-colors flex items-center gap-1">
@@ -125,16 +164,29 @@ export function AskKestrelPanel({ onExecuteQuery }: AskKestrelPanelProps) {
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 rounded-md border border-input bg-surface-elevated px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary font-mono"
             />
-            <Button
-              type="submit"
-              variant="tactical"
-              size="sm"
-              disabled={isAnswering || !query.trim()}
-              className="gap-1 font-mono text-xs shrink-0"
-            >
-              <Send className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">ASK</span>
-            </Button>
+            {isAnswering ? (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleStop}
+                className="gap-1 font-mono text-xs shrink-0 bg-red-600/90 hover:bg-red-600 text-white"
+              >
+                <Square className="h-3 w-3 fill-current" />
+                <span className="hidden sm:inline">STOP</span>
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="tactical"
+                size="sm"
+                disabled={!query.trim()}
+                className="gap-1 font-mono text-xs shrink-0"
+              >
+                <Send className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">ASK</span>
+              </Button>
+            )}
           </form>
         </div>
       </CardContent>
