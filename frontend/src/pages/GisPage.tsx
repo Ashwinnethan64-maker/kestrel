@@ -945,8 +945,8 @@ export function GisPage() {
 
       {/* 4. AI Area Analysis Right-Side Drawer (UI-Only Placeholder - No Simulated Results) */}
       {isAiDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-md h-full bg-card border-l border-border p-6 overflow-y-auto space-y-4 font-mono text-xs shadow-2xl flex flex-col justify-between">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px] animate-fade-in">
+          <div className="w-full max-w-md sm:max-w-[420px] h-full bg-card border-l border-border p-6 overflow-y-auto space-y-4 font-mono text-xs shadow-2xl flex flex-col justify-between">
             <div className="space-y-4">
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-border pb-3">

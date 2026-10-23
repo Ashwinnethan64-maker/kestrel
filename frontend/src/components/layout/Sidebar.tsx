@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -9,10 +9,8 @@ import {
   ChartNoAxesCombined,
   FileText,
   Settings,
-  ChevronLeft,
-  ChevronRight,
-  Shield,
-  Layers,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { KestrelLogo } from "./KestrelLogo";
@@ -41,18 +39,48 @@ export const UTILITY_NAV_ITEMS: NavItem[] = [
 ];
 
 interface SidebarProps {
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
+  isPinned: boolean;
+  onTogglePin: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }
 
 export function Sidebar({
-  isCollapsed,
-  onToggleCollapse,
+  isPinned,
+  onTogglePin,
   mobileOpen,
   onCloseMobile,
 }: SidebarProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Desktop active expansion state: either explicitly pinned open, or hovered, or focused via keyboard
+  const isExpanded = isPinned || isHovered || hasKeyboardFocus;
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Graceful 120ms exit debounce to prevent jitter when moving cursor near borders
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 120);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const renderNavLink = (item: NavItem) => {
     const Icon = item.icon;
     const content = (
@@ -81,10 +109,10 @@ export function Sidebar({
             item.path === "/settings" && "text-sidebar-muted group-hover:text-foreground"
           )}
         />
-        {!isCollapsed && (
+        {isExpanded && (
           <span className="truncate flex-1 tracking-wide font-sans">{item.label}</span>
         )}
-        {!isCollapsed && item.badge && (
+        {isExpanded && item.badge && (
           <span className="ml-auto rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-mono font-bold text-primary">
             {item.badge}
           </span>
@@ -92,7 +120,7 @@ export function Sidebar({
       </NavLink>
     );
 
-    if (isCollapsed) {
+    if (!isExpanded) {
       return (
         <Tooltip key={item.path} content={item.label} side="right">
           {content}
@@ -104,27 +132,47 @@ export function Sidebar({
   };
 
   const sidebarContent = (
-    <div className="flex h-full flex-col justify-between bg-sidebar border-r border-sidebar-border select-none">
+    <div
+      className={cn(
+        "flex h-full flex-col justify-between bg-sidebar border-r border-sidebar-border select-none transition-all duration-200 ease-out",
+        !isPinned && isHovered && "shadow-2xl shadow-black/80 border-r-border/80"
+      )}
+      onFocus={() => setHasKeyboardFocus(true)}
+      onBlur={(e) => {
+        // If focus moves outside the sidebar container, release keyboard focus
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setHasKeyboardFocus(false);
+        }
+      }}
+    >
       {/* Top Header */}
       <div>
         <div className="flex h-14 items-center justify-between px-3.5 border-b border-sidebar-border/80">
-          <KestrelLogo showWordmark={!isCollapsed} size={24} />
-          <button
-            onClick={onToggleCollapse}
-            className="hidden md:flex h-7 w-7 items-center justify-center rounded border border-border/60 bg-surface-elevated text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronLeft className="h-3.5 w-3.5" />
-            )}
-          </button>
+          <KestrelLogo showWordmark={isExpanded} size={24} />
+          {isExpanded && (
+            <button
+              onClick={onTogglePin}
+              className={cn(
+                "hidden md:flex h-7 w-7 items-center justify-center rounded border transition-colors",
+                isPinned
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/60 bg-surface-elevated text-muted-foreground hover:text-foreground hover:border-primary/50"
+              )}
+              title={isPinned ? "Unpin sidebar (auto-collapse)" : "Pin sidebar open"}
+              aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar open"}
+            >
+              {isPinned ? (
+                <PinOff className="h-3.5 w-3.5" />
+              ) : (
+                <Pin className="h-3.5 w-3.5" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Tactical Sub-header */}
-        {!isCollapsed && (
-          <div className="px-4 py-2 text-[10px] font-mono tracking-widest text-muted-foreground uppercase border-b border-sidebar-border/40 flex items-center justify-between">
+        {isExpanded && (
+          <div className="px-4 py-2 text-[10px] font-mono tracking-widest text-muted-foreground uppercase border-b border-sidebar-border/40 flex items-center justify-between animate-fade-in">
             <span>OPERATIONAL SECTORS</span>
             <span className="h-1.5 w-1.5 rounded-full bg-positive animate-ping" />
           </div>
@@ -138,8 +186,8 @@ export function Sidebar({
 
       {/* Bottom Section */}
       <div className="border-t border-sidebar-border/80 p-2 space-y-1">
-        {!isCollapsed && (
-          <div className="px-3 py-1 text-[10px] font-mono tracking-widest text-muted-foreground uppercase">
+        {isExpanded && (
+          <div className="px-3 py-1 text-[10px] font-mono tracking-widest text-muted-foreground uppercase animate-fade-in">
             SYSTEM CONTROL
           </div>
         )}
@@ -150,15 +198,28 @@ export function Sidebar({
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
-      <aside
+      {/* Desktop Layout Rail & Auto-Hover Overlay Container */}
+      <div
         className={cn(
-          "hidden md:block transition-all duration-300 ease-in-out shrink-0 z-30",
-          isCollapsed ? "w-16" : "w-60"
+          "hidden md:block relative shrink-0 transition-[width] duration-200 ease-out z-30",
+          isPinned ? "w-60" : "w-16"
         )}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        {sidebarContent}
-      </aside>
+        <aside
+          className={cn(
+            "h-full transition-all duration-200 ease-out",
+            isPinned
+              ? "w-60 relative"
+              : isExpanded
+              ? "w-60 absolute top-0 left-0 bottom-0 z-40 bg-sidebar"
+              : "w-16 relative"
+          )}
+        >
+          {sidebarContent}
+        </aside>
+      </div>
 
       {/* Mobile Drawer Overlay */}
       {mobileOpen && (

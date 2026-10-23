@@ -5,7 +5,7 @@ import { Topbar } from "./Topbar";
 import { CommandPalette } from "./CommandPalette";
 
 export function AppLayout() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
@@ -13,8 +13,8 @@ export function AppLayout() {
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans">
       {/* Sidebar Navigation */}
       <Sidebar
-        isCollapsed={isCollapsed}
-        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+        isPinned={isPinned}
+        onTogglePin={() => setIsPinned(!isPinned)}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
       />
