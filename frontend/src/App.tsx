@@ -11,7 +11,6 @@ const GisPage = lazy(() => import("./pages/GisPage").then(m => ({ default: m.Gis
 const CopilotPage = lazy(() => import("./pages/CopilotPage").then(m => ({ default: m.CopilotPage })));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage").then(m => ({ default: m.AnalyticsPage })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage").then(m => ({ default: m.ReportsPage })));
-const ThemeStudioPage = lazy(() => import("./pages/ThemeStudioPage").then(m => ({ default: m.ThemeStudioPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
@@ -91,14 +90,7 @@ export function App() {
               </Suspense>
             }
           />
-          <Route
-            path="/theme"
-            element={
-              <Suspense fallback={<RouteLoadingFallback />}>
-                <ThemeStudioPage />
-              </Suspense>
-            }
-          />
+          <Route path="/theme" element={<Navigate to="/settings" replace />} />
           <Route
             path="/settings"
             element={

@@ -8,7 +8,6 @@ import {
   MapPin,
   BarChart3,
   FileText,
-  Palette,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -38,7 +37,6 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
 ];
 
 export const UTILITY_NAV_ITEMS: NavItem[] = [
-  { label: "Theme Studio", path: "/theme", icon: Palette },
   { label: "Settings", path: "/settings", icon: Settings },
 ];
 

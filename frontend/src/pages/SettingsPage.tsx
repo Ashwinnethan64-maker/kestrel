@@ -82,15 +82,15 @@ export function SettingsPage() {
               <span className="text-primary">{activeTheme.category}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-border/40">
-              <span className="text-muted-foreground">Corner Radius:</span>
-              <span className="text-foreground">{activeTheme.radius}</span>
+              <span className="text-muted-foreground">Typography:</span>
+              <span className="text-foreground">{activeTheme.fontFamily}</span>
             </div>
-            <div className="pt-2">
-              <Link to="/theme">
-                <Button variant="outline" size="sm" className="w-full text-xs font-mono">
-                  Launch 22-Style Theme Studio
-                </Button>
-              </Link>
+            <div className="flex justify-between items-center py-1 border-b border-border/40">
+              <span className="text-muted-foreground">Accent Gold:</span>
+              <span className="text-primary font-bold">{activeTheme.accentHex}</span>
+            </div>
+            <div className="pt-2 text-[11px] text-muted-foreground italic">
+              Platform visual system locked to Editorial Design (Art &amp; Editorial).
             </div>
           </CardContent>
         </Card>
