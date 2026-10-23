@@ -281,7 +281,7 @@ gantt
 - [x] **Sub-task 2.3B.4**: Implement Kannada prompt translation and system persona for regional language output.
 
 ##### Task 2.4B: Proactive Threat Flash & Anomaly Engine
-- [ ] **Sub-task 2.4B.1**: Build analytical query detecting sudden crime volume surges (>40% increase in 7 days in any station).
+- [x] **Sub-task 2.4B.1**: Build analytical query detecting sudden crime volume surges (>40% increase in 7 days in any station) (`GET /api/analytics/surges`).
 - [x] **Sub-task 2.4B.2**: Provide endpoint serving real-time tactical warnings and clearance statistics (`GET /api/analytics/summary`).
 
 ---

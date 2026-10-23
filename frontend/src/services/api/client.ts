@@ -12,7 +12,8 @@ import type {
   NetworkCentralityResponse,
   SuspectCentralityMetrics,
   QueryIntentClassification,
-  SemanticCaseSearchResult
+  SemanticCaseSearchResult,
+  CrimeSurgeResponse
 } from '@kestrel/shared';
 
 const isLiveMode = import.meta.env.VITE_API_SOURCE === 'live';
@@ -123,6 +124,15 @@ class LiveOrMockClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, limit })
     });
+    return res.json();
+  }
+
+  async getCrimeSurges(threshold?: number, windowDays?: number): Promise<ApiResponse<CrimeSurgeResponse>> {
+    if (!this.isLive) return mockClient.getCrimeSurges(threshold, windowDays);
+    const query = new URLSearchParams();
+    if (threshold !== undefined) query.set('threshold', String(threshold));
+    if (windowDays !== undefined) query.set('windowDays', String(windowDays));
+    const res = await fetch(`/api/analytics/surges?${query.toString()}`);
     return res.json();
   }
 }

@@ -13,7 +13,9 @@ import {
   SuspectCentralityMetrics,
   NetworkCentralityResponse,
   QueryIntentClassification,
-  SemanticCaseSearchResult
+  SemanticCaseSearchResult,
+  CrimeSurgeResponse,
+  StationCrimeSurgeAnomaly
 } from '@kestrel/shared';
 
 export class MockIntelClient {
@@ -143,6 +145,44 @@ export class MockIntelClient {
           { station: 'K.R. Puram', total: 24, cleared: 16, ratePercent: 66.6 },
           { station: 'Whitefield', total: 31, cleared: 22, ratePercent: 70.9 },
           { station: 'Cubbon Park', total: 12, cleared: 10, ratePercent: 83.3 }
+        ],
+        detectedSurges: [
+          {
+            station: 'K.R. Puram',
+            district: 'Bengaluru East',
+            current7DayCount: 12,
+            prior7DayCount: 5,
+            surgePercent: 140.0,
+            dominantCategory: 'Narcotics Trafficking',
+            dominantCategoryCount: 4,
+            severity: 'Critical',
+            tacticalRecommendation: 'Coordinate with Central Crime Branch (CCB) narcotics squad for targeted cordon-and-search operations at identified distribution nodes in K.R. Puram.',
+            detectedAt: new Date().toISOString()
+          },
+          {
+            station: 'Yeshwanthpur',
+            district: 'Bengaluru North',
+            current7DayCount: 12,
+            prior7DayCount: 7,
+            surgePercent: 71.4,
+            dominantCategory: 'Vehicle Theft',
+            dominantCategoryCount: 4,
+            severity: 'High',
+            tacticalRecommendation: 'Increase motorcycle patrol frequency and set up automated ANPR vehicle surveillance along primary transit routes in Yeshwanthpur.',
+            detectedAt: new Date().toISOString()
+          },
+          {
+            station: 'Ulsoor',
+            district: 'Bengaluru Central',
+            current7DayCount: 8,
+            prior7DayCount: 5,
+            surgePercent: 60.0,
+            dominantCategory: 'Armed Robbery',
+            dominantCategoryCount: 3,
+            severity: 'High',
+            tacticalRecommendation: 'Activate armed quick-reaction team (QRT) checkpoints and night perimeter patrols around high-risk commercial avenues in Ulsoor.',
+            detectedAt: new Date().toISOString()
+          }
         ]
       },
       meta: { timestamp: new Date().toISOString() }
@@ -374,6 +414,22 @@ export class MockIntelClient {
       success: true,
       data: results,
       meta: { total: results.length, timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getCrimeSurges(threshold: number = 40.0, windowDays: number = 7): Promise<ApiResponse<CrimeSurgeResponse>> {
+    const analytics = await this.getTacticalAnalytics();
+    const anomalies = (analytics.data.detectedSurges || []).filter(a => a.surgePercent >= threshold);
+
+    return {
+      success: true,
+      data: {
+        anomalies,
+        analysisWindowDays: windowDays,
+        thresholdPercent: threshold,
+        anchorDate: new Date().toISOString()
+      },
+      meta: { total: anomalies.length, timestamp: new Date().toISOString() }
     };
   }
 }

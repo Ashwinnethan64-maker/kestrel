@@ -59,6 +59,7 @@ export interface TacticalAnalyticsSummary {
     cleared: number;
     ratePercent: number;
   }[];
+  detectedSurges?: StationCrimeSurgeAnomaly[];
 }
 
 // Hybrid RAG & Intent Classification Types
@@ -96,4 +97,26 @@ export interface SemanticCaseSearchResult {
   similarityScore: number; // 0.0 - 1.0 (cosine similarity)
   accusedNames: string[];
 }
+
+// Crime Volume Surge & Anomaly Detection Types
+export interface StationCrimeSurgeAnomaly {
+  station: string;
+  district: string;
+  current7DayCount: number;
+  prior7DayCount: number;
+  surgePercent: number;
+  dominantCategory: string;
+  dominantCategoryCount: number;
+  severity: 'Critical' | 'High' | 'Warning';
+  tacticalRecommendation: string;
+  detectedAt: string;
+}
+
+export interface CrimeSurgeResponse {
+  anomalies: StationCrimeSurgeAnomaly[];
+  analysisWindowDays: number;
+  thresholdPercent: number;
+  anchorDate: string;
+}
+
 
