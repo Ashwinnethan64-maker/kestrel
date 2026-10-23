@@ -27,3 +27,11 @@
   - Feature pages (`src/pages/*` and future `src/features/*`).
   - Interactive visualization canvases (`@xyflow/react` graph, Leaflet GIS map).
   - Ambient Copilot chat interaction and report generation.
+
+- **Developer C (Backend & Intelligence Core):**
+  - **Task 1.1B: Database Setup & Drizzle ORM Schema** (Complete — 2026-10-23):
+    - Initialized and spun up dedicated local Supabase stack (`supabase_db_kestrel`) on `localhost:54322` (Studio on `localhost:54323`).
+    - Verified and enabled `postgis 3.3.7`, `vector 0.8.0`, `uuid-ossp 1.1`, and `pg_trgm 1.6`.
+    - Defined schema with 6 tables (`officers`, `cases_fir`, `entities_accused`, `case_accused_junction`, `case_evidence`, `ai_threads`), GIST index on `location_geom`, GIN index on `(fir_number, description)` with `gin_trgm_ops`, and unique compound index on `(case_id, accused_id)`.
+    - Configured `drizzle.config.ts`, `backend/src/db/index.ts`, and pushed schema with `drizzle-kit push`.
+
