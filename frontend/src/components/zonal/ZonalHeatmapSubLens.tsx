@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Marker, Popup, useMap } from 're
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { FIRCase, PoliceStationZone } from '@kestrel/shared';
+import { useCommandDeckStore } from '@/store/useCommandDeckStore';
 import {
   ShieldAlert,
   Building2,
@@ -140,14 +141,27 @@ export const ZonalHeatmapSubLens: React.FC<ZonalHeatmapSubLensProps> = ({
   >([]);
   const [deploymentToast, setDeploymentToast] = useState(false);
 
-  // Filter cases based on active syndicate if set
+  const currentPlayheadDate = useCommandDeckStore((s) => s.timeline.currentPlayheadDate);
+
+  // Filter cases based on active syndicate and temporal scrubber position
   const filteredCases = cases.filter((c) => {
-    if (!activeSyndicateFilter) return true;
-    return (
-      c.tags?.includes(activeSyndicateFilter) ||
-      c.crimeCategory.toLowerCase().includes(activeSyndicateFilter.toLowerCase()) ||
-      c.description.toLowerCase().includes(activeSyndicateFilter.toLowerCase())
-    );
+    // 1. Syndicate Filter
+    if (activeSyndicateFilter) {
+      const match =
+        c.tags?.includes(activeSyndicateFilter) ||
+        c.crimeCategory.toLowerCase().includes(activeSyndicateFilter.toLowerCase()) ||
+        c.description.toLowerCase().includes(activeSyndicateFilter.toLowerCase());
+      if (!match) return false;
+    }
+
+    // 2. Chronological Scrubber Filter
+    if (currentPlayheadDate && c.incidentDate) {
+      const caseDate = new Date(c.incidentDate).getTime();
+      const playheadTime = new Date(currentPlayheadDate).getTime();
+      if (caseDate > playheadTime) return false;
+    }
+
+    return true;
   });
 
   const handleDeployPatrols = () => {

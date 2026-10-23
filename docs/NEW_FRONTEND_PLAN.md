@@ -190,10 +190,10 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
 ### Phase 6: Temporal Incident Scrubber & Time-Travel Playback
 *Priority: High | Goal: Tactile timeline scrubber at bottom edge demonstrating chronological crime expansion.*
 
-- [ ] **Task 6.1: Bottom-Rail Temporal Scrubber (`TemporalScrubber.tsx`)**
-  - [ ] **Sub-task 6.1.1**: Create `frontend/src/components/deck/TemporalScrubber.tsx` with fixed 48px tactile bottom bar spanning the Tactical Lens width with `[⏮]`, `[ ⏵ PLAY / ⏸ PAUSE ]`, `[⏭]`, and speed toggles (`1x`, `2x`, `5x`).
-  - [ ] **Sub-task 6.1.2**: Implement interactive playhead scrubbing between 90 days ago and today with presets (`24 Hours`, `7 Days`, `30 Days`, `Full Quarter`).
-  - [ ] **Sub-task 6.1.3**: Wire dynamic canvas synchronization revealing incident pins and graph nodes chronologically with smooth opacity fade-ins.
+- [x] **Task 6.1: Bottom-Rail Temporal Scrubber (`TemporalScrubber.tsx`)**
+  - [x] **Sub-task 6.1.1**: Create `frontend/src/components/deck/TemporalScrubber.tsx` with fixed 48px tactile bottom bar spanning the Tactical Lens width with `[⏮]`, `[ ⏵ PLAY / ⏸ PAUSE ]`, `[⏭]`, and speed toggles (`1x`, `2x`, `5x`).
+  - [x] **Sub-task 6.1.2**: Implement interactive playhead scrubbing between 90 days ago and today with presets (`24 Hours`, `7 Days`, `30 Days`, `Full Quarter`).
+  - [x] **Sub-task 6.1.3**: Wire dynamic canvas synchronization revealing incident pins and graph nodes chronologically with smooth opacity fade-ins.
 
 ---
 

@@ -21,6 +21,7 @@ import { DocketLens } from '../docket/DocketLens';
 import { CaseNexusLens } from '../lenses/CaseNexusLens';
 import { ZonalStrategicLens } from '../zonal/ZonalStrategicLens';
 import { AmbientCopilot } from '../copilot/AmbientCopilot';
+import { TemporalScrubber } from './TemporalScrubber';
 
 // ── Lens mode tab definitions ─────────────────────────────────────────────────
 const LENS_TABS: { mode: DeckLensMode; label: string; icon: React.ReactNode; shortcut: string }[] = [
@@ -194,68 +195,7 @@ function CopilotRailPlaceholder() {
   );
 }
 
-// ── Temporal Scrubber Placeholder ──────────────────────────────────────────────
-function TemporalScrubber() {
-  const { timeline, setTimeline } = useCommandDeckStore();
 
-  return (
-    <div className="h-12 flex items-center gap-3 px-4 border-t border-white/5 bg-deck-surface/80 shrink-0">
-      {/* Playback controls */}
-      <div className="flex items-center gap-1">
-        <button className="p-1 text-tx-muted hover:text-intel-cyan transition-colors" title="Skip back">
-          <SkipBack size={12} />
-        </button>
-        <button
-          className="p-1.5 text-tx-muted hover:text-intel-cyan transition-colors"
-          title={timeline.isPlaying ? 'Pause' : 'Play'}
-          onClick={() => setTimeline({ isPlaying: !timeline.isPlaying })}
-        >
-          {timeline.isPlaying ? <Pause size={14} /> : <Play size={14} />}
-        </button>
-        <button className="p-1 text-tx-muted hover:text-intel-cyan transition-colors" title="Skip forward">
-          <SkipForward size={12} />
-        </button>
-      </div>
-
-      {/* Timeline bar */}
-      <div className="flex-1 flex items-center gap-3">
-        <span className="text-[9px] font-mono text-tx-muted shrink-0">{timeline.startDate}</span>
-        <div className="flex-1 relative h-1 bg-deck-panel rounded-full overflow-hidden">
-          <div
-            className="absolute left-0 top-0 h-full bg-gradient-to-r from-intel-cyan/60 to-intel-cyan rounded-full"
-            style={{ width: '65%' }}
-          />
-          {/* Playhead */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-intel-cyan border-2 border-deck-deep shadow-deck-glow cursor-pointer"
-            style={{ left: '65%' }}
-          />
-        </div>
-        <span className="text-[9px] font-mono text-tx-muted shrink-0">{timeline.endDate}</span>
-      </div>
-
-      {/* Speed control */}
-      <div className="flex items-center gap-1 shrink-0">
-        <Clock size={10} className="text-tx-muted" />
-        {([1, 2, 5] as const).map(speed => (
-          <button
-            key={speed}
-            onClick={() => setTimeline({ playbackSpeed: speed })}
-            className={`
-              px-1.5 py-0.5 text-[9px] font-mono rounded transition-all duration-100
-              ${timeline.playbackSpeed === speed
-                ? 'bg-intel-cyan/15 text-intel-cyan border border-intel-cyan/25'
-                : 'text-tx-muted hover:text-tx-secondary'
-              }
-            `}
-          >
-            {speed}x
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ── DeckShell Main ────────────────────────────────────────────────────────────
 export function DeckShell() {

@@ -10,9 +10,11 @@ import type {
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-interface TimelineState {
+export interface TimelineState {
   startDate: string;        // ISO date string e.g. '2024-01-01'
   endDate: string;          // ISO date string e.g. '2024-03-31'
+  currentPlayheadDate: string; // Active scrubbed date e.g. '2024-03-14'
+  preset: '24h' | '7d' | '30d' | '90d' | 'custom';
   playbackSpeed: 1 | 2 | 5;
   isPlaying: boolean;
 }
@@ -94,6 +96,8 @@ const initialState: CommandDeckState = {
   timeline: {
     startDate: thirtyDaysAgo.toISOString().slice(0, 10),
     endDate: now.toISOString().slice(0, 10),
+    currentPlayheadDate: now.toISOString().slice(0, 10),
+    preset: '30d',
     playbackSpeed: 1,
     isPlaying: false
   },

@@ -46,9 +46,9 @@ const MOCK_OFFICERS: OfficerWithWorkload[] = [
     activeCaseCount: 2, pendingTaskCount: 2
   },
   {
-    id: 'OFF-05', badgeNumber: 'KA-BLR-0100', name: 'ACP Vikramaditya',
-    email: 'acp.blr@ksp.gov.in', role: 'Superintendent',
-    station: 'HQ Command', district: 'Bengaluru',
+    id: 'OFF-05', badgeNumber: 'KA-BLR-0001', name: 'Dr. B. Ramesh, IPS',
+    email: 'dcp.east@ksp.gov.in', role: 'Superintendent',
+    station: 'Bengaluru East Division', district: 'Bengaluru East',
     activeCaseCount: 11, pendingTaskCount: 8
   }
 ];
