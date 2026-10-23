@@ -1,0 +1,30 @@
+{
+  "name": "kestrel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Next-Generation Crime Intelligence & Tactical Operations System",
+  "workspaces": [
+    "packages/*",
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspaces --if-present",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "generate:dataset": "npm run generate:dataset --workspace=@kestrel/shared"
+  },
+  "keywords": [
+    "crime-intelligence",
+    "tactical-gis",
+    "reactflow",
+    "postgis",
+    "rag"
+  ],
+  "author": "Kestrel Team",
+  "license": "UNLICENSED"
+}

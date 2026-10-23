@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@kestrel/shared": ["../packages/shared/src/index.ts"],
+      "@kestrel/shared/*": ["../packages/shared/src/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}

@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-deck-deep: #050b14;
+  --bg-deck-surface: #0a1322;
+  --bg-deck-panel: #0f1d33;
+  --border-deck: rgba(255, 255, 255, 0.08);
+  --border-deck-glow: rgba(6, 182, 212, 0.25);
+
+  --color-critical: #ef4444;
+  --color-warning: #f59e0b;
+  --color-resolved: #10b981;
+  --color-intel-cyan: #06b6d4;
+  --color-accent-purple: #8b5cf6;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-mono-cyan: #22d3ee;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-deck-deep);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Custom Tactical Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #050b14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Radar Beacon Animation */
+@keyframes radarPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.radar-ping {
+  animation: radarPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
