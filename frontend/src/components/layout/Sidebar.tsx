@@ -2,11 +2,11 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
-  Sparkles,
-  FolderGit2,
-  Share2,
-  MapPin,
-  BarChart3,
+  BrainCircuit,
+  FolderSearch,
+  Network,
+  Map,
+  ChartNoAxesCombined,
   FileText,
   Settings,
   ChevronLeft,
@@ -27,12 +27,12 @@ export interface NavItem {
 }
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
-  { label: "Overview", path: "/overview", icon: LayoutDashboard },
-  { label: "AI Copilot", path: "/copilot", icon: Sparkles, badge: "AI" },
-  { label: "Cases & FIRs", path: "/cases", icon: FolderGit2 },
-  { label: "Entity Network", path: "/network", icon: Share2 },
-  { label: "Geographic Intel", path: "/gis", icon: MapPin },
-  { label: "Analytics", path: "/analytics", icon: BarChart3 },
+  { label: "Dashboard", path: "/overview", icon: LayoutDashboard },
+  { label: "AI Investigator", path: "/copilot", icon: BrainCircuit, badge: "AI" },
+  { label: "Case Explorer", path: "/cases", icon: FolderSearch },
+  { label: "Criminal Network", path: "/network", icon: Network },
+  { label: "Crime Map", path: "/gis", icon: Map },
+  { label: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
   { label: "Reports", path: "/reports", icon: FileText },
 ];
 
@@ -68,7 +68,19 @@ export function Sidebar({
           )
         }
       >
-        <Icon className="h-4 w-4 shrink-0 transition-colors group-hover:text-primary" />
+        <Icon
+          className={cn(
+            "h-4 w-4 shrink-0 transition-colors",
+            item.path === "/overview" && "text-primary group-hover:text-primary",
+            item.path === "/copilot" && "text-[#63E6D2] group-hover:text-[#63E6D2]",
+            item.path === "/cases" && "text-secondary group-hover:text-secondary",
+            item.path === "/network" && "text-primary group-hover:text-primary",
+            item.path === "/gis" && "text-destructive group-hover:text-destructive",
+            item.path === "/analytics" && "text-secondary group-hover:text-secondary",
+            item.path === "/reports" && "text-[#A78BFA] group-hover:text-[#A78BFA]",
+            item.path === "/settings" && "text-sidebar-muted group-hover:text-foreground"
+          )}
+        />
         {!isCollapsed && (
           <span className="truncate flex-1 tracking-wide font-sans">{item.label}</span>
         )}
@@ -95,8 +107,8 @@ export function Sidebar({
     <div className="flex h-full flex-col justify-between bg-sidebar border-r border-sidebar-border select-none">
       {/* Top Header */}
       <div>
-        <div className="flex h-14 items-center justify-between px-4 border-b border-sidebar-border/80">
-          <KestrelLogo showWordmark={!isCollapsed} size={22} />
+        <div className="flex h-14 items-center justify-between px-3.5 border-b border-sidebar-border/80">
+          <KestrelLogo showWordmark={!isCollapsed} size={24} />
           <button
             onClick={onToggleCollapse}
             className="hidden md:flex h-7 w-7 items-center justify-center rounded border border-border/60 bg-surface-elevated text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
@@ -132,21 +144,6 @@ export function Sidebar({
           </div>
         )}
         {UTILITY_NAV_ITEMS.map(renderNavLink)}
-
-        {/* Tactical Badge & Node Info */}
-        {!isCollapsed && (
-          <div className="mt-3 rounded border border-sidebar-border bg-surface-elevated/40 p-2.5 font-mono text-[10px] text-muted-foreground">
-            <div className="flex items-center justify-between mb-1">
-              <span className="flex items-center gap-1.5 text-foreground font-semibold">
-                <Shield className="h-3 w-3 text-primary" /> SOC NODE 01
-              </span>
-              <span className="text-positive">SECURE</span>
-            </div>
-            <div className="text-[9px] text-muted-foreground truncate">
-              JURISDICTION: BLR METRO
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

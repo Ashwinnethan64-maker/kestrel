@@ -58,6 +58,33 @@ export class MockIntelClient {
     };
   }
 
+  async createCase(newCase: Omit<FIRCase, 'id' | 'createdAt' | 'updatedAt'> & Partial<Pick<FIRCase, 'id'>>): Promise<ApiResponse<FIRCase>> {
+    const id = newCase.id || `CASE-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+    const createdRecord: FIRCase = {
+      ...newCase,
+      id,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    this.cases.unshift(createdRecord);
+    return {
+      success: true,
+      data: createdRecord,
+      meta: { timestamp }
+    };
+  }
+
+  async getEvidenceByCaseId(caseId: string): Promise<ApiResponse<any[]>> {
+    const evidenceList = (curatedDataset as any).evidence || [];
+    const filtered = evidenceList.filter((e: any) => e.caseId === caseId);
+    return {
+      success: true,
+      data: filtered,
+      meta: { total: filtered.length, timestamp: new Date().toISOString() }
+    };
+  }
+
   async getAccused(searchQuery?: string): Promise<ApiResponse<AccusedSuspect[]>> {
     let result = [...this.suspects];
     if (searchQuery) {
