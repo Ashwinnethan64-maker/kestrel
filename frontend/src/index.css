@@ -2,67 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-deck-deep: #050b14;
-  --bg-deck-surface: #0a1322;
-  --bg-deck-panel: #0f1d33;
-  --border-deck: rgba(255, 255, 255, 0.08);
-  --border-deck-glow: rgba(6, 182, 212, 0.25);
+@layer base {
+  :root {
+    /* Kestrel Command Palette Tokens */
+    --background: 221 48% 9%;        /* #0B1220 - Deep Void Canvas */
+    --foreground: 218 38% 97%;       /* #F3F6FB - Primary Text */
 
-  --color-critical: #ef4444;
-  --color-warning: #f59e0b;
-  --color-resolved: #10b981;
-  --color-intel-cyan: #06b6d4;
-  --color-accent-purple: #8b5cf6;
+    --sidebar: 217 48% 10%;          /* #0D1625 - Command Sidebar */
+    --sidebar-foreground: 218 38% 97%;
+    --sidebar-muted: 215 22% 72%;    /* #A8B6C8 - Secondary Text */
+    --sidebar-border: 213 30% 23%;   /* #28374A - Tactical Border */
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-mono-cyan: #22d3ee;
+    --card: 216 45% 12%;             /* #111C2E - Bento Surface */
+    --card-foreground: 218 38% 97%;
+
+    --popover: 216 45% 12%;
+    --popover-foreground: 218 38% 97%;
+
+    --surface-elevated: 216 41% 15%; /* #162235 - Elevated Surface / Panels */
+
+    --muted: 216 35% 17%;
+    --muted-foreground: 215 22% 72%; /* #A8B6C8 */
+
+    --border: 213 30% 23%;           /* #28374A */
+    --input: 213 30% 23%;
+    
+    /* Primary Accent - Electric Teal */
+    --primary: 171 73% 65%;          /* #63E6D2 - Primary Accent */
+    --primary-foreground: 221 48% 9%;
+
+    /* Secondary Accent - Cyber Blue */
+    --secondary: 215 100% 71%;       /* #69A9FF - Secondary Accent */
+    --secondary-foreground: 221 48% 9%;
+
+    /* Status & Alerts */
+    --attention: 33 83% 69%;         /* #F2B66D - Amber Warning */
+    --attention-foreground: 221 48% 9%;
+
+    --destructive: 0 84% 60%;        /* #F85149 - Critical Coral/Red */
+    --destructive-foreground: 218 38% 97%;
+
+    --positive: 160 84% 45%;         /* #10B981 - Resolved / Normal */
+    --positive-foreground: 221 48% 9%;
+
+    --ring: 171 73% 65%;             /* Teal Focus Ring */
+    --radius: 0.5rem;                /* 8px crisp radius */
+
+    /* Animation Timings */
+    --motion-fast: 150ms;
+    --motion-standard: 250ms;
+    --motion-slow: 400ms;
+  }
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--bg-deck-deep);
-  color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  overflow: hidden;
-  user-select: none;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+  }
 }
 
 /* Custom Tactical Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #050b14;
+  background: #0B1220;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #28374A;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #63E6D2;
 }
 
-/* Radar Beacon Animation */
-@keyframes radarPulse {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.8;
-  }
-  50% {
-    transform: scale(1.6);
-    opacity: 0.2;
-  }
-  100% {
-    transform: scale(2.2);
-    opacity: 0;
-  }
+/* Subtle Tactical Grid / Scanline Patterns */
+.bg-tactical-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(40, 55, 74, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(40, 55, 74, 0.25) 1px, transparent 1px);
 }
 
-.radar-ping {
-  animation: radarPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+.glow-teal {
+  box-shadow: 0 0 20px -3px rgba(99, 230, 210, 0.25);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px -3px rgba(105, 169, 255, 0.25);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px -3px rgba(248, 81, 73, 0.3);
 }
