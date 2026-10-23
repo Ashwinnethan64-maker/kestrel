@@ -17,6 +17,7 @@ import { useCommandDeckStore } from '@/store/useCommandDeckStore';
 import { DeckTopbar } from './DeckTopbar';
 import { CommandPalette } from './CommandPalette';
 import { useKeyboardBus } from '@/hooks/useKeyboardBus';
+import { DocketLens } from '../docket/DocketLens';
 
 // ── Lens mode tab definitions ─────────────────────────────────────────────────
 const LENS_TABS: { mode: DeckLensMode; label: string; icon: React.ReactNode; shortcut: string }[] = [
@@ -361,7 +362,7 @@ export function DeckShell() {
       <div className="flex flex-1 min-h-0">
         {/* Tactical Lens Canvas */}
         <main className="flex-[65] flex flex-col min-w-0 border-r border-white/5" role="main">
-          {lensMode === 'morning_docket' && <DocketPlaceholder altitude={altitude} />}
+          {lensMode === 'morning_docket' && <DocketLens />}
           {lensMode === 'case_nexus' && (
             <CaseNexusPlaceholder caseId={activeCaseId} subLens={caseSubLens} />
           )}

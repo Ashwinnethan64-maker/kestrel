@@ -111,9 +111,9 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
 ### Phase 2: Investigating Officer (IO) Morning Docket Lens
 *Priority: High | Goal: Low-friction morning launchpad showing assigned cases, statutory clocks, and tasks.*
 
-- [ ] **Task 2.1: Priority Assigned Cases Docket (`DocketLens.tsx`)**
-  - [ ] **Sub-task 2.1.1**: Create `frontend/src/components/docket/DocketLens.tsx` with officer greeting banner and 3-column tactical docket grid (Critical Violent, In-Progress, Statutory Remand Deadlines).
-  - [ ] **Sub-task 2.1.2**: Build `DocketCaseCard.tsx` with FIR badge, incident date, category strip, prime accused details, statutory clock indicator (`"⏳ 42 days to charge-sheet"`), and 1-click `openCaseNexus(case.id)`.
+- [x] **Task 2.1: Priority Assigned Cases Docket (`DocketLens.tsx`)**
+  - [x] **Sub-task 2.1.1**: Create `frontend/src/components/docket/DocketLens.tsx` with officer greeting banner and 3-column tactical docket grid (Critical Violent, In-Progress, Statutory Remand Deadlines).
+  - [x] **Sub-task 2.1.2**: Build `DocketCaseCard.tsx` with FIR badge, incident date, category strip, prime accused details, statutory clock indicator (`"⏳ 42 days to charge-sheet"`), and 1-click `openCaseNexus(case.id)`.
 
 - [ ] **Task 2.2: Shift Task Checklist & Statutory Deadlines**
   - [ ] **Sub-task 2.2.1**: Implement `ShiftTaskList.tsx` inside the docket rendering today's actionable investigative tasks (CCTV, FSL Ballistics, Witness 180 BNSS, Interrogations).
