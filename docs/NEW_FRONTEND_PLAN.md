@@ -96,10 +96,10 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
   - [x] **Sub-task 1.2.1**: Implement `frontend/src/services/api/client.ts` with typed REST client and streaming fetch reader for Groq Server-Sent Events (`POST /api/copilot/query`).
   - [x] **Sub-task 1.2.2**: Implement `frontend/src/services/api/mockClient.ts` with 100% in-memory failover pre-loaded with curated cases, officers, tasks, and accused graph relations for zero-network resilience.
 
-- [ ] **Task 1.3: Top HUD Navigation Bar (`DeckTopbar.tsx`)**
-  - [ ] **Sub-task 1.3.1**: Create `frontend/src/components/deck/DeckTopbar.tsx` featuring tactical brand crest, station breadcrumb, search trigger, and language toggle (`EN`/`KN`).
-  - [ ] **Sub-task 1.3.2**: Implement Persona/Role Switcher dropdown (`Insp. Vikram Patil [IO]`, `SI Ramesh [IO]`, `Dr. B. Ramesh, IPS [DCP]`).
-  - [ ] **Sub-task 1.3.3**: Implement Connectivity Status Pill with live click toggle between `LIVE BACKEND [●]` and `OFFLINE FAIL-SAFE [○]`.
+- [x] **Task 1.3: Top HUD Navigation Bar (`DeckTopbar.tsx`)**
+  - [x] **Sub-task 1.3.1**: Create `frontend/src/components/deck/DeckTopbar.tsx` featuring tactical brand crest, station breadcrumb, search trigger, and language toggle (`EN`/`KN`).
+  - [x] **Sub-task 1.3.2**: Implement Persona/Role Switcher dropdown (`Insp. Vikram Patil [IO]`, `SI Ramesh [IO]`, `Dr. B. Ramesh, IPS [DCP]`).
+  - [x] **Sub-task 1.3.3**: Implement Connectivity Status Pill with live click toggle between `LIVE BACKEND [●]` and `OFFLINE FAIL-SAFE [○]`.
 
 - [ ] **Task 1.4: Command Deck Shell Container (`DeckShell.tsx` & Keyboard Bus)**
   - [ ] **Sub-task 1.4.1**: Create `frontend/src/components/deck/DeckShell.tsx` with high-contrast dark SOC 3-pane split layout (Left/Center 65% Tactical Lens, Right 35% Ambient Copilot & Caseboard, Bottom 48px Scrubber).
