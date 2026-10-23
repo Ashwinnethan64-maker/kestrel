@@ -64,6 +64,11 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     overflow-x: hidden;
   }
+  /* Accessible visible focus styles for interactive elements */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 }
 
 /* Custom Tactical Scrollbars */
@@ -100,4 +105,14 @@
 
 .glow-red {
   box-shadow: 0 0 20px -3px rgba(248, 81, 73, 0.3);
+}
+
+/* WCAG Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
