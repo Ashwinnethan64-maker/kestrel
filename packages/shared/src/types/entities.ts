@@ -109,3 +109,26 @@ export interface OfficerWithWorkload extends OfficerProfile {
   pendingTaskCount: number;
 }
 
+// Canonical alias — used throughout Phase 1+ components & store
+export type Officer = OfficerProfile;
+
+// ── Deck Shell UI State Types ────────────────────────────────────────────────
+
+/**
+ * CommandAltitude — which operational persona is active in DeckTopbar.
+ * 'field_io'  → Inspector/SI: Morning Docket + 360° Case Nexus
+ * 'commander' → DCP/ACP: Zonal Radar + Station Clearance Matrix
+ */
+export type CommandAltitude = 'field_io' | 'commander';
+
+/**
+ * DeckLensMode — which top-level lens fills the Tactical Canvas (65% left panel).
+ * Matches the three mode buttons in the UI anatomy wireframe.
+ */
+export type DeckLensMode = 'morning_docket' | 'case_nexus' | 'zonal_radar';
+
+/**
+ * CaseSubLens — active sub-pane inside the 360° Case Nexus.
+ * Only relevant when DeckLensMode === 'case_nexus'.
+ */
+export type CaseSubLens = 'dossier' | 'scene_gis' | 'syndicate_graph';

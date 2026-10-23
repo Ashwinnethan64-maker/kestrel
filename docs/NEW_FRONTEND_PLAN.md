@@ -79,9 +79,9 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
   - [x] **Sub-task 0.2.4**: Mount `/api/officers` and `/api/tasks` in `backend/src/index.ts`.
   - [x] **Sub-task 0.2.5**: Enrich `POST /api/copilot/query` in `backend/src/routes/copilot.ts` to accept `activeOfficerId`, `activeOfficerName`, and `activeOfficerRole` inside `CopilotPromptEnvelope`.
 
-- [ ] **Task 0.3: Canonical TypeScript Shared Contracts**
-  - [ ] **Sub-task 0.3.1**: Define models in `packages/shared/src/types/entities.ts` (`Officer`, `InvestigativeTask`, `CommandAltitude`, `DeckLensMode`, `CaseSubLens`).
-  - [ ] **Sub-task 0.3.2**: Export updated types in `packages/shared/src/index.ts` and compile shared workspace package (`npm run build`).
+- [x] **Task 0.3: Canonical TypeScript Shared Contracts**
+  - [x] **Sub-task 0.3.1**: Define models in `packages/shared/src/types/entities.ts` (`Officer`, `InvestigativeTask`, `CommandAltitude`, `DeckLensMode`, `CaseSubLens`).
+  - [x] **Sub-task 0.3.2**: Export updated types in `packages/shared/src/index.ts` and compile shared workspace package (`npm run build`).
 
 ---
 
