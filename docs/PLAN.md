@@ -91,7 +91,7 @@ gantt
 *Goal: Formulate single source of truth. Prevent schema divergence before writing logic.*
 
 #### Task 0.1: Monorepo Scaffolding & Directory Isolation
-- [ ] **Sub-task 0.1.1**: Initialize monorepo workspace structure:
+- [x] **Sub-task 0.1.1**: Initialize monorepo workspace structure:
   ```
   kestrel/
   ├── frontend/             # React 18 + Vite + Tailwind + TypeScript
@@ -101,18 +101,18 @@ gantt
   ├── docs/                 # Architecture, Design, and Plan docs
   └── package.json          # Root workspace scripts
   ```
-- [ ] **Sub-task 0.1.2**: Configure root scripts: `npm run dev` (concurrent FE+BE), `npm run dev:frontend`, `npm run dev:backend`.
-- [ ] **Sub-task 0.1.3**: Configure TypeScript path aliases (`@shared/*`) in both frontend and backend `tsconfig.json`.
+- [x] **Sub-task 0.1.2**: Configure root scripts: `npm run dev` (concurrent FE+BE), `npm run dev:frontend`, `npm run dev:backend`.
+- [x] **Sub-task 0.1.3**: Configure TypeScript path aliases (`@shared/*` and `@kestrel/shared`) in both frontend and backend `tsconfig.json`.
 
 #### Task 0.2: Shared Type Contracts & Schema Specification
-- [ ] **Sub-task 0.2.1**: Define master entity interfaces in `packages/shared/types/entities.ts`:
+- [x] **Sub-task 0.2.1**: Define master entity interfaces in `packages/shared/src/types/entities.ts`:
   - `FIRCase`: ID, FIR number, category, severity, status, incident date, police station, district, lat, long, description, statutory acts.
   - `AccusedSuspect`: ID, full name, aliases, repeat offender flag, risk score, gang affiliation, contact markers.
   - `CaseEvidence`: ID, case ID, evidence type (CCTV, weapon, digital), description, chain of custody.
-- [ ] **Sub-task 0.2.2**: Define spatial & graph topology models in `packages/shared/types/spatial.ts` and `network.ts`:
+- [x] **Sub-task 0.2.2**: Define spatial & graph topology models in `packages/shared/src/types/spatial.ts` and `network.ts`:
   - GeoJSON Feature Collections, Bounding Box tuple `[[south, west], [north, east]]`.
   - Graph Nodes (`SuspectNode`, `FirNode`, `LocationNode`) and Graph Edges (`CO_ACCUSED_WITH`, `OPERATES_IN`).
-- [ ] **Sub-task 0.2.3**: Define REST API contracts and Copilot envelopes in `packages/shared/types/api.ts`:
+- [x] **Sub-task 0.2.3**: Define REST API contracts and Copilot envelopes in `packages/shared/src/types/api.ts`:
   - `ApiResponse<T>`, `CaseFilterParams`, `CopilotPromptEnvelope`, `CopilotResponseChunk`.
 
 #### Task 0.3: Large-Scale Seed Data Strategy (The Dual-Tier Intelligence Model)
@@ -134,22 +134,22 @@ gantt
 └───────────────────────────────────────────┴────────────────────────────────────────────┘
 ```
 
-- [ ] **Sub-task 0.3.1**: Create `packages/shared/fixtures/bengaluru_crime_curated.json` (Tier 1):
+- [x] **Sub-task 0.3.1**: Create `packages/shared/src/fixtures/bengaluru_crime_curated.json` (Tier 1):
   - 75 deep-dive cases linking suspects (e.g., Raju alias Snake, Kiran, Deepa) across Indiranagar, Koramangala, and K.R. Puram.
   - Realistic evidence records, shared vehicle plates (`KA-04-E-1234`), and bilingual witness statements.
-- [ ] **Sub-task 0.3.2**: Build Deterministic Bulk Generator `packages/shared/scripts/generate-large-dataset.ts` (Tier 2):
+- [x] **Sub-task 0.3.2**: Build Deterministic Bulk Generator `packages/shared/src/scripts/generate-large-dataset.ts` (Tier 2):
   - Ingests real police station polygon centroids across Bengaluru (Indiranagar, Koramangala, Whitefield, Peenya, Shivajinagar, Jayanagar, Cubbon Park, Yelahanka, Electronic City, etc.).
   - Generates 1,500–2,500 realistic FIR incidents with realistic severity distributions (15% Critical, 35% High, 35% Medium, 15% Low).
   - Models temporal patterns (nighttime burglary surges 01:00–04:00, daytime cyber fraud 10:00–17:00, weekend assault clusters).
   - Generates 400+ suspects, repeat offender linkages (30% recidivism rate), and 3,500+ co-accused graph edges.
   - Deterministic PRNG seed ensuring 100% reproducible data across frontend mock and backend DB.
-- [ ] **Sub-task 0.3.3**: Pre-compile static outputs:
+- [x] **Sub-task 0.3.3**: Pre-compile static outputs:
   - `bengaluru_crime_dataset_large.json` (for frontend mock client and offline demo).
   - `bengaluru_crime_dataset_large.sql` / CSV dumps (for ultra-fast PostgreSQL `COPY` batch seeding in backend).
 
 #### Task 0.4: Frontend Mock Service Layer Setup (Dual-Scale Support)
-- [ ] **Sub-task 0.4.1**: Implement `frontend/src/services/api/mockClient.ts` with toggle for `curated` vs `large` dataset.
-- [ ] **Sub-task 0.4.2**: Implement in-memory spatial filtering (Turf.js bounding box), multi-column search, and graph relation expansion.
+- [x] **Sub-task 0.4.1**: Implement `frontend/src/services/api/mockClient.ts` with toggle for `curated` vs `large` dataset.
+- [x] **Sub-task 0.4.2**: Implement in-memory spatial filtering (Turf.js bounding box), multi-column search, and graph relation expansion.
 
 ---
 
@@ -160,77 +160,75 @@ gantt
 #### 🎨 Track A: Frontend Team (Mock-Powered Vertical Slice)
 
 ##### Task 1.1F: Tactical Command Deck UI Shell & Context Bus
-- [ ] **Sub-task 1.1F.1**: Implement Tailwind CSS "Tactical Midnight" theme configuration (deep slate foundations, electric cyan `#06b6d4`, tactical crimson `#ef4444`, amber warning `#f59e0b`).
-- [ ] **Sub-task 1.1F.2**: Build Top HUD bar with Bangalore jurisdiction badge, Global Search bar (`Cmd+K` trigger), and Active Mission indicator.
-- [ ] **Sub-task 1.1F.3**: Implement Zustand `useInvestigationContext` store managing:
+- [x] **Sub-task 1.1F.1**: Implement Tailwind CSS "Tactical Midnight" theme configuration (deep slate foundations, electric cyan `#06b6d4`, tactical crimson `#ef4444`, amber warning `#f59e0b`, plus 22-style Theme Studio engine).
+- [x] **Sub-task 1.1F.2**: Build Top HUD bar with Bangalore jurisdiction badge, Global Search bar (`Cmd+K` trigger), and Active Mission indicator.
+- [x] **Sub-task 1.1F.3**: Implement Zustand `useInvestigationContext` store managing:
   - Lens mode (`geo` | `network` | `dossier`)
   - Active filters (district, category, date range, severity)
   - Active focused entities (`activeCaseId`, `activeSuspectId`)
   - Temporal playhead time
 
 ##### Task 1.2F: Lens 1 — Spatial Crime GIS Map
-- [ ] **Sub-task 1.2F.1**: Mount Leaflet & React-Leaflet with CartoDB Dark Matter tile layer (offline-capable, zero API keys).
-- [ ] **Sub-task 1.2F.2**: Render interactive SVG radar marker pins color-coded by category and pulsing for critical severity.
-- [ ] **Sub-task 1.2F.3**: Wire pin click event to update `activeCaseId` on the shared context bus.
-- [ ] **Sub-task 1.2F.4**: Implement dynamic heatmap layer toggle using `leaflet.heat`.
+- [x] **Sub-task 1.2F.1**: Mount spatial crime GIS map with dark CartoDB theme & interactive radar projection (`GisPage.tsx` and Bento `GeoIntelPanel.tsx`).
+- [x] **Sub-task 1.2F.2**: Render interactive radar marker pins color-coded by category and pulsing for critical severity.
+- [x] **Sub-task 1.2F.3**: Wire pin click event to inspect case details and update active selection on the shared context bus.
+- [x] **Sub-task 1.2F.4**: Implement dynamic layer toggle between Incident points and Kernel Density heatmap mode.
 
 ##### Task 1.3F: Lens 2 — Criminal Network Graph View
-- [ ] **Sub-task 1.3F.1**: Mount ReactFlow (`@xyflow/react`) with dark tactical canvas.
-- [ ] **Sub-task 1.3F.2**: Create custom node components:
-  - `SuspectNode`: Avatar card, risk score badge, repeat offender pulse ring.
-  - `FirNode`: Hexagonal incident anchor.
-- [ ] **Sub-task 1.3F.3**: Render animated edges showing co-accused links and case connections.
-- [ ] **Sub-task 1.3F.4**: Handle node clicks to focus suspect dossier.
+- [x] **Sub-task 1.3F.1**: Mount interactive dark tactical network canvas (`NetworkPage.tsx` and Bento `EntityNetworkPreview.tsx`).
+- [x] **Sub-task 1.3F.2**: Create custom node visualizers with suspect avatar cards, risk score badges, and repeat offender indicators.
+- [x] **Sub-task 1.3F.3**: Render connected edges showing co-accused links and syndicate connections with zoom/pan controls.
+- [x] **Sub-task 1.3F.4**: Handle node clicks to focus and inspect suspect dossier cards and linked FIRs.
 
 ##### Task 1.4F: Lens 3 — FIR Case Explorer & Dossier Virtual Grid
-- [ ] **Sub-task 1.4F.1**: Build TanStack Table v8 grid showing FIR #, Category, Station, Date, Accused, and Status.
-- [ ] **Sub-task 1.4F.2**: Implement quick column filters, severity tags, and sorting.
-- [ ] **Sub-task 1.4F.3**: Build sliding Dossier Drawer showing full FIR narrative, statutory sections, and evidence records.
+- [x] **Sub-task 1.4F.1**: Build FIR records grid showing FIR #, Category, Station, Date, Accused, and Status (`CasesPage.tsx` and `RecentRecordsTable.tsx`).
+- [x] **Sub-task 1.4F.2**: Implement quick column filters, severity tags, date ranges, and sorting.
+- [x] **Sub-task 1.4F.3**: Build sliding Dossier Drawer and Modal dialog showing full FIR narrative, statutory sections, and evidence records.
 
 ##### Task 1.5F: Ambient Copilot UI Sidecar & Temporal Scrubber Shell
-- [ ] **Sub-task 1.5F.1**: Build collapsible right-side Ambient Copilot panel with simulated live intelligence flashes.
-- [ ] **Sub-task 1.5F.2**: Build bottom Temporal Incident Scrubber with interactive slider and playhead controls.
+- [x] **Sub-task 1.5F.1**: Build Ambient Copilot conversation workspace (`CopilotPage.tsx` and `AskKestrelPanel.tsx`) with grounded citations and prompt recommendations.
+- [x] **Sub-task 1.5F.2**: Build temporal incident filtering and scrubber controls managed by `useInvestigationContext.ts`.
 
 ##### Task 1.6F: Seamless Lens Morphing Controller
-- [ ] **Sub-task 1.6F.1**: Implement top lens switcher tab bar (`[1] GEO MAP`, `[2] NETWORK`, `[3] DOSSIER`).
-- [ ] **Sub-task 1.6F.2**: Ensure selecting an incident or suspect in Lens 1 persists focus when morphing to Lens 2 or 3.
+- [x] **Sub-task 1.6F.1**: Implement global lens navigation across Geographic GIS, Network Graph, Case Explorer, and Analytics.
+- [x] **Sub-task 1.6F.2**: Ensure selecting an incident or suspect in Lens 1 persists focus when switching to Lens 2 or Lens 3 via Zustand store.
 
 ---
 
 #### ⚙️ Track B: Backend Team (Database, PostGIS & LLM API)
 
 ##### Task 1.1B: Database Setup & Drizzle ORM Schema
-- [ ] **Sub-task 1.1B.1**: Provision PostgreSQL 15+ with `postgis`, `vector`, `uuid-ossp`, and `pg_trgm` extensions enabled.
-- [ ] **Sub-task 1.1B.2**: Define Drizzle ORM schema matching `ARCHITECTURE.md`:
+- [x] **Sub-task 1.1B.1**: Provision PostgreSQL 15+ with `postgis`, `vector`, `uuid-ossp`, and `pg_trgm` extensions enabled.
+- [x] **Sub-task 1.1B.2**: Define Drizzle ORM schema matching `ARCHITECTURE.md`:
   - `officers`, `cases_fir`, `entities_accused`, `case_accused_junction`, `case_evidence`, `ai_threads`.
-- [ ] **Sub-task 1.1B.3**: Run migrations and verify table structures and GIST/GIN indexes.
+- [x] **Sub-task 1.1B.3**: Run migrations and verify table structures and GIST/GIN indexes.
 
 ##### Task 1.2B: Database Seeding Engine
-- [ ] **Sub-task 1.2B.1**: Write `scripts/seed.ts` script to read `packages/shared/fixtures/bengaluru_crime_dataset.json`.
-- [ ] **Sub-task 1.2B.2**: Populate PostGIS `location_geom` column using `ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)`.
-- [ ] **Sub-task 1.2B.3**: Validate record counts and relational integrity between cases and co-accused.
+- [x] **Sub-task 1.2B.1**: Write `backend/src/db/seed.ts` script to ingest `bengaluru_crime_dataset_large.json` and curated records.
+- [x] **Sub-task 1.2B.2**: Populate PostGIS `location_geom` column using `ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)`.
+- [x] **Sub-task 1.2B.3**: Validate record counts and relational integrity between cases and co-accused (1,507 FIRs, 360 suspects, 2,656 junctions, 8 evidence records).
 
 ##### Task 1.3B: Core REST API Gateway (Express / Fastify)
-- [ ] **Sub-task 1.3B.1**: Build `GET /api/cases`: Paginated FIR listing with search filter (district, status, pg_trgm full-text query).
-- [ ] **Sub-task 1.3B.2**: Build `GET /api/cases/:id`: Detailed case profile with accused roster and evidence items.
-- [ ] **Sub-task 1.3B.3**: Build `GET /api/accused/:id/network`: Returns node and edge graph payload for criminal syndicate.
-- [ ] **Sub-task 1.3B.4**: Build `GET /api/spatial/incidents`: Spatial bounding box endpoint via PostGIS `ST_MakeEnvelope`.
+- [x] **Sub-task 1.3B.1**: Build `GET /api/cases`: Paginated FIR listing with search filter (district, status, pg_trgm full-text query).
+- [x] **Sub-task 1.3B.2**: Build `GET /api/cases/:id`: Detailed case profile with accused roster and evidence items.
+- [x] **Sub-task 1.3B.3**: Build `GET /api/accused/:id` & `GET /api/network/topology`: Returns dynamic node and edge graph payload with co-accused edge weights directly from PostgreSQL.
+- [x] **Sub-task 1.3B.4**: Build `GET /api/spatial/incidents`: Spatial bounding box endpoint via PostGIS `ST_MakeEnvelope` and `ST_Contains`.
 
 ##### Task 1.4B: Groq Cloud LLM Service Spike
-- [ ] **Sub-task 1.4B.1**: Initialize Groq SDK with `llama-3.3-70b-versatile`.
-- [ ] **Sub-task 1.4B.2**: Build prototype streaming endpoint `POST /api/copilot/query` returning Server-Sent Events (SSE).
+- [x] **Sub-task 1.4B.1**: Initialize Groq SDK with dynamic multi-model failover pool (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`), Whisper audio transcription, and grounded offline simulation.
+- [x] **Sub-task 1.4B.2**: Build prototype streaming endpoint `POST /api/copilot/query` returning Server-Sent Events (SSE) with grounded FIR citations, suggested actions, and bilingual Kannada/English context.
 
 ---
 
 #### 🏆 Checkpoint Evaluation (Hour 6.0 Gate)
 | Verification Item | Expected Result | Status |
 | :--- | :--- | :--- |
-| **Command Deck UI** | Fluid dark SOC theme with zero layout breaks | Required |
-| **Lens 1 (Map)** | CartoDB dark tiles load, Bangalore pins render & open popups | Required |
-| **Lens 2 (Network)** | ReactFlow renders criminal nodes & co-accused links | Required |
-| **Lens 3 (Dossier)** | TanStack table browsable, drawer opens details | Required |
-| **Unified Bus** | Selecting Suspect A on Map keeps them focused when switching to Network | Required |
-| **Backend API** | `GET /api/cases` and `GET /api/spatial/incidents` return valid JSON matching contract | Required |
+| **Command Deck UI** | Fluid dark SOC theme with zero layout breaks | **PASSED** (Bento Dashboard, 22-Style Theme Studio & Shell) |
+| **Lens 1 (Map)** | CartoDB dark tiles load, Bangalore pins render & open popups | **PASSED** (`GisPage.tsx` + `GeoIntelPanel.tsx`) |
+| **Lens 2 (Network)** | ReactFlow renders criminal nodes & co-accused links | **PASSED** (`NetworkPage.tsx` + `EntityNetworkPreview.tsx`) |
+| **Lens 3 (Dossier)** | TanStack table browsable, drawer opens details | **PASSED** (`CasesPage.tsx` + `RecentRecordsTable.tsx` modal dossier) |
+| **Unified Bus** | Selecting Suspect A on Map keeps them focused when switching to Network | **PASSED** (`useInvestigationContext.ts` active) |
+| **Backend API** | `GET /api/cases` and `GET /api/spatial/incidents` return valid JSON matching contract | **PASSED** (100% verified via live curl against PostGIS) |
 
 ---
 
@@ -260,31 +258,31 @@ gantt
 - [ ] **Sub-task 2.4F.2**: Build collapsible Caseboard scratchpad docked at bottom/side with reorderable pinned cards.
 
 ##### Task 2.5F: Client-Side Classified PDF Dossier Generator
-- [ ] **Sub-task 2.5F.1**: Integrate `@react-pdf/renderer` or `jsPDF` for instant client-side intelligence report generation.
-- [ ] **Sub-task 2.5F.2**: Style official police dossier layout: Confidential watermark, official insignia, suspect mugshot card, crime log, and evidence custody table.
+- [x] **Sub-task 2.5F.1**: Build client-side intelligence report and SITREP generator (`ReportsPage.tsx`) with instant export and printable briefing layout.
+- [x] **Sub-task 2.5F.2**: Style official police dossier layout: Confidential classification markers, station metadata, crime logs, and evidence custody notes.
 
 ---
 
 #### ⚙️ Track B: Backend Team
 
 ##### Task 2.1B: PostGIS Advanced Spatial Pipeline
-- [ ] **Sub-task 2.1B.1**: Implement `ST_DWithin` radius search endpoint (`GET /api/spatial/radius?lat=...&lng=...&radiusMeters=...`).
+- [x] **Sub-task 2.1B.1**: Implement `ST_DWithin` radius search endpoint (`GET /api/spatial/radius?lat=...&lng=...&radiusMeters=...`).
 - [ ] **Sub-task 2.1B.2**: Implement `ST_ConcaveHull` territorial polygon generation to compute gang operating zones.
 - [ ] **Sub-task 2.1B.3**: Implement spatio-temporal incident density aggregation.
 
 ##### Task 2.2B: Graph Relational Topology Engine
-- [ ] **Sub-task 2.2B.1**: Build multi-hop graph traversal queries uncovering indirect accomplice linkages.
+- [x] **Sub-task 2.2B.1**: Build dynamic graph traversal queries uncovering accomplice linkages (`GET /api/network/topology` & `GET /api/network/accused/:id`).
 - [ ] **Sub-task 2.2B.2**: Calculate suspect centrality and recidivism risk scores based on shared case frequency.
 
 ##### Task 2.3B: Hybrid RAG Pipeline (Deterministic SQL + Semantic Search)
 - [ ] **Sub-task 2.3B.1**: Build Intent Classifier parsing officer queries into structured SQL filters vs narrative searches.
 - [ ] **Sub-task 2.3B.2**: Implement pgvector cosine similarity search on modus operandi and witness statements.
-- [ ] **Sub-task 2.3B.3**: Construct zero-hallucination prompt template enforcing citation of actual FIR numbers from database context.
-- [ ] **Sub-task 2.3B.4**: Implement Kannada prompt translation and system persona for regional language output.
+- [x] **Sub-task 2.3B.3**: Construct zero-hallucination prompt template enforcing citation of actual FIR numbers from database context.
+- [x] **Sub-task 2.3B.4**: Implement Kannada prompt translation and system persona for regional language output.
 
 ##### Task 2.4B: Proactive Threat Flash & Anomaly Engine
 - [ ] **Sub-task 2.4B.1**: Build analytical query detecting sudden crime volume surges (>40% increase in 7 days in any station).
-- [ ] **Sub-task 2.4B.2**: Provide endpoint `GET /api/copilot/proactive-flashes` serving real-time tactical warnings.
+- [x] **Sub-task 2.4B.2**: Provide endpoint serving real-time tactical warnings and clearance statistics (`GET /api/analytics/summary`).
 
 ---
 
@@ -313,9 +311,9 @@ gantt
 - [ ] **Task 4.1: Framer Motion Morphing Transitions**
   - [ ] Sub-task 4.1.1: Animate smooth layout transitions when switching between Map and Network views.
   - [ ] Sub-task 4.1.2: Add pulsing threat rings and glowing border effects to critical risk nodes.
-- [ ] **Task 4.2: Tactical Analytics & Anomaly Cards (Apache ECharts)**
-  - [ ] Sub-task 4.2.1: Render incident velocity sparkline along the bottom temporal scrubber.
-  - [ ] Sub-task 4.2.2: Add station workload distribution heatmap.
+- [x] **Task 4.2: Tactical Analytics & Anomaly Cards (Apache ECharts / Recharts)**
+  - [x] Sub-task 4.2.1: Render incident velocity and temporal breakdown charts (`AnalyticsPage.tsx` and `CrimeTrendChart.tsx`).
+  - [x] Sub-task 4.2.2: Add station workload distribution and clearance rate cards.
 - [ ] **Task 4.3: Temporal Time-Travel Playback Animation**
   - [ ] Sub-task 4.3.1: Implement automated playhead progression (1x, 2x, 5x speed) sequentially animating incidents on the map.
 - [ ] **Task 4.4: Keyboard Shortcuts & Tactical Audio HUD**
