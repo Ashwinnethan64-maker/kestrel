@@ -144,7 +144,10 @@ copilotRouter.post('/query', async (req, res) => {
     language = 'en',
     activeLens = 'dossier',
     focusedCaseId,
-    focusedSuspectId
+    focusedSuspectId,
+    activeOfficerId,
+    activeOfficerName,
+    activeOfficerRole
   } = envelope;
 
   // Set Server-Sent Events (SSE) streaming headers
@@ -155,6 +158,10 @@ copilotRouter.post('/query', async (req, res) => {
 
   const citedFirNumbers: string[] = [];
   let contextSnippet = '';
+  if (activeOfficerName || activeOfficerId) {
+    contextSnippet += `[ACTIVE OFFICER / COMMAND PROFILE]\n`;
+    contextSnippet += `Officer: ${activeOfficerName || 'Officer'} (Role: ${activeOfficerRole || 'Investigator'}, ID: ${activeOfficerId || 'OFF-01'})\n\n`;
+  }
   let fallbackText = '';
   let suggestedActionType: 'FILTER_MAP' | 'FOCUS_SUSPECT' = 'FILTER_MAP';
   let suggestedPayload: Record<string, unknown> = {};
@@ -445,8 +452,16 @@ copilotRouter.post('/query', async (req, res) => {
     // ------------------------------------------------------------------------
     // Construct System & User Prompts (Zero-Hallucination Enforced)
     // ------------------------------------------------------------------------
+    const roleGuidance = (() => {
+      const role = (activeOfficerRole || 'Investigator').toLowerCase();
+      if (role.includes('superintendent') || role.includes('acp') || role.includes('dcp') || role.includes('commissioner')) {
+        return 'You are advising a SENIOR COMMAND officer. Provide strategic-level summaries: inter-station syndicate patterns, clearance rates, resource allocation, and city-wide threat assessments. Avoid granular evidence-level minutiae.';
+      }
+      return 'You are advising a FIELD INVESTIGATING OFFICER. Provide actionable case-specific guidance: evidence collection checklists, statutory sections under BNS/BNSS, witness interview priorities, forensic referrals (FSL), and next investigative steps.';
+    })();
     const systemPrompt = `You are KESTREL Tactical Ambient Intelligence Copilot, an AI crime intelligence analyst supporting Karnataka State Police (KSP) officers in Bengaluru.
 Your objective is to provide precise, actionable, grounded intelligence based strictly on the provided police files.
+${roleGuidance}
 Language Instruction:
 ${language === 'kn' ? 'Respond in fluent, operational Kannada using standard police terminology (ದರೋಡೆ, ಆರೋಪಿ, ಸಾಕ್ಷ್ಯ, ಎಫ್.ಐ.ಆರ್).' : 'Respond in crisp, professional tactical English.'}
 Strict Citation Rule: Always cite the exact FIR numbers (e.g. ${citedFirNumbers.slice(0, 3).join(', ') || 'FIR-2024-INDR-0102'}) whenever referencing incidents.

@@ -85,3 +85,27 @@ export interface CaseAccusedJunction {
   role: SuspectRole;
   status: AccusedStatus;
 }
+
+export type TaskType = 'CCTV' | 'Forensic' | 'Interrogation' | 'Seizure' | 'Documentation';
+export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type TaskStatus = 'Pending' | 'In Progress' | 'Completed';
+
+export interface InvestigativeTask {
+  id: string;
+  caseId: string;
+  assignedOfficerId?: string | null;
+  title: string;
+  taskType: TaskType;
+  priority: TaskPriority;
+  status: TaskStatus;
+  dueDate?: string | null;
+  completedAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface OfficerWithWorkload extends OfficerProfile {
+  activeCaseCount: number;
+  pendingTaskCount: number;
+}
+

@@ -23,6 +23,7 @@ export interface CaseFilterParams {
   searchQuery?: string;
   startDate?: string;
   endDate?: string;
+  investigatingOfficerId?: string;
   page?: number;
   limit?: number;
 }
@@ -33,6 +34,9 @@ export interface CopilotPromptEnvelope {
   activeLens: TacticalLensMode;
   focusedCaseId?: string | null;
   focusedSuspectId?: string | null;
+  activeOfficerId?: string | null;
+  activeOfficerName?: string | null;
+  activeOfficerRole?: string | null;
   activeBoundingBox?: BoundingBox | null;
   activeFilters?: CaseFilterParams;
   temporalWindow?: [string, string]; // ISO dates

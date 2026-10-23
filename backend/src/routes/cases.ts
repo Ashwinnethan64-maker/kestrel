@@ -15,6 +15,7 @@ casesRouter.get('/', async (req, res) => {
       crimeCategory,
       priority,
       status,
+      investigatingOfficerId,
       searchQuery,
       startDate,
       endDate,
@@ -42,6 +43,9 @@ casesRouter.get('/', async (req, res) => {
     }
     if (status) {
       conditions.push(eq(casesFir.status, String(status)));
+    }
+    if (investigatingOfficerId) {
+      conditions.push(eq(casesFir.investigatingOfficerId, String(investigatingOfficerId)));
     }
     if (startDate) {
       conditions.push(gte(casesFir.incidentDate, new Date(String(startDate))));

@@ -72,12 +72,12 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
   - [x] **Sub-task 0.1.2**: Update `backend/src/db/seed.ts` with seeded tasks (15 realistic tasks across curated cases including FIR #102/24 CCTV recovery, ballistics FSL, and 180 BNSS statement).
   - [x] **Sub-task 0.1.3**: Push schema to PostgreSQL with `npx drizzle-kit push` and verify database tables.
 
-- [ ] **Task 0.2: Backend REST & SSE Endpoints Expansion**
-  - [ ] **Sub-task 0.2.1**: Implement `GET /api/officers` in `backend/src/routes/officers.ts` returning the 5 seeded officers joined with active case counts and pending task counts.
-  - [ ] **Sub-task 0.2.2**: Upgrade `GET /api/cases` in `backend/src/routes/cases.ts` to support `investigatingOfficerId` query parameter filtering.
-  - [ ] **Sub-task 0.2.3**: Implement `backend/src/routes/tasks.ts` supporting `GET /api/tasks?caseId=...&officerId=...` and `PATCH /api/tasks/:id` status updates.
-  - [ ] **Sub-task 0.2.4**: Mount `/api/officers` and `/api/tasks` in `backend/src/index.ts`.
-  - [ ] **Sub-task 0.2.5**: Enrich `POST /api/copilot/query` in `backend/src/routes/copilot.ts` to accept `activeOfficerId`, `activeOfficerName`, and `activeOfficerRole` inside `CopilotPromptEnvelope`.
+- [x] **Task 0.2: Backend REST & SSE Endpoints Expansion**
+  - [x] **Sub-task 0.2.1**: Implement `GET /api/officers` in `backend/src/routes/officers.ts` returning the 5 seeded officers joined with active case counts and pending task counts.
+  - [x] **Sub-task 0.2.2**: Upgrade `GET /api/cases` in `backend/src/routes/cases.ts` to support `investigatingOfficerId` query parameter filtering.
+  - [x] **Sub-task 0.2.3**: Implement `backend/src/routes/tasks.ts` supporting `GET /api/tasks?caseId=...&officerId=...` and `PATCH /api/tasks/:id` status updates.
+  - [x] **Sub-task 0.2.4**: Mount `/api/officers` and `/api/tasks` in `backend/src/index.ts`.
+  - [x] **Sub-task 0.2.5**: Enrich `POST /api/copilot/query` in `backend/src/routes/copilot.ts` to accept `activeOfficerId`, `activeOfficerName`, and `activeOfficerRole` inside `CopilotPromptEnvelope`.
 
 - [ ] **Task 0.3: Canonical TypeScript Shared Contracts**
   - [ ] **Sub-task 0.3.1**: Define models in `packages/shared/src/types/entities.ts` (`Officer`, `InvestigativeTask`, `CommandAltitude`, `DeckLensMode`, `CaseSubLens`).
