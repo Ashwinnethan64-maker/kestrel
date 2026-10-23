@@ -272,7 +272,7 @@ gantt
 
 ##### Task 2.2B: Graph Relational Topology Engine
 - [x] **Sub-task 2.2B.1**: Build dynamic graph traversal queries uncovering accomplice linkages (`GET /api/network/topology` & `GET /api/network/accused/:id`).
-- [ ] **Sub-task 2.2B.2**: Calculate suspect centrality and recidivism risk scores based on shared case frequency.
+- [x] **Sub-task 2.2B.2**: Calculate suspect centrality (degree/PageRank), network roles (Kingpin/Broker/Enforcer/Associate), and dynamic recidivism risk scores (`GET /api/network/centrality` & `GET /api/network/accused/:id/metrics`).
 
 ##### Task 2.3B: Hybrid RAG Pipeline (Deterministic SQL + Semantic Search)
 - [ ] **Sub-task 2.3B.1**: Build Intent Classifier parsing officer queries into structured SQL filters vs narrative searches.

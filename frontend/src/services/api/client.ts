@@ -8,7 +8,9 @@ import type {
   NetworkTopologyPayload, 
   TacticalAnalyticsSummary,
   GangTerritory,
-  SpatioTemporalDensityResponse
+  SpatioTemporalDensityResponse,
+  NetworkCentralityResponse,
+  SuspectCentralityMetrics
 } from '@kestrel/shared';
 
 const isLiveMode = import.meta.env.VITE_API_SOURCE === 'live';
@@ -85,9 +87,26 @@ class LiveOrMockClient {
     const res = await fetch(`/api/spatial/density?${query.toString()}`);
     return res.json();
   }
+
+  async getNetworkCentrality(filters?: { role?: string; minDegree?: number; limit?: number }): Promise<ApiResponse<NetworkCentralityResponse>> {
+    if (!this.isLive) return mockClient.getNetworkCentrality(filters);
+    const query = new URLSearchParams();
+    if (filters?.role) query.set('role', filters.role);
+    if (filters?.minDegree) query.set('minDegree', String(filters.minDegree));
+    if (filters?.limit) query.set('limit', String(filters.limit));
+    const res = await fetch(`/api/network/centrality?${query.toString()}`);
+    return res.json();
+  }
+
+  async getSuspectCentralityMetrics(suspectId: string): Promise<ApiResponse<SuspectCentralityMetrics & { networkRank: number }>> {
+    if (!this.isLive) return mockClient.getSuspectCentralityMetrics(suspectId);
+    const res = await fetch(`/api/network/accused/${encodeURIComponent(suspectId)}/metrics`);
+    return res.json();
+  }
 }
 
 export const apiClient = new LiveOrMockClient();
 export function setApiMode(mode: 'mock' | 'live') {
   apiClient.setMode(mode);
 }
+

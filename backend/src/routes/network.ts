@@ -3,9 +3,241 @@ import { db } from '../db';
 import { entitiesAccused, caseAccusedJunction, casesFir } from '../db/schema';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { curatedCrimeDataset } from '@kestrel/shared';
-import type { ApiResponse, NetworkTopologyPayload, GraphNode, GraphEdge } from '@kestrel/shared';
+import type { 
+  ApiResponse, 
+  NetworkTopologyPayload, 
+  GraphNode, 
+  GraphEdge,
+  NetworkRole,
+  SuspectCentralityMetrics,
+  NetworkCentralityResponse
+} from '@kestrel/shared';
 
 export const networkRouter = Router();
+
+// Helper to compute suspect network metrics and roles across the entire co-accused graph
+async function getSuspectCentralityData(filters?: {
+  role?: string;
+  minDegree?: number;
+  gang?: string;
+  limit?: number;
+}) {
+  const { role, minDegree = 0, gang, limit = 100 } = filters || {};
+
+  const conditions = [];
+  if (gang) {
+    conditions.push(sql`gang_affiliation ILIKE ${'%' + String(gang) + '%'}`);
+  }
+
+  const whereSql = conditions.length > 0 ? sql`WHERE ${sql.join(conditions, sql` AND `)}` : sql``;
+
+  const rawRows = await db.execute<{
+    id: string;
+    full_name: string;
+    aliases: string[] | string;
+    gang_affiliation: string | null;
+    priors: number;
+    is_repeat_offender: boolean;
+    degree: number;
+    total_cases: number;
+    critical_cases: number;
+    composite_risk_score: number;
+    network_role: NetworkRole;
+  }>(sql`
+    WITH suspect_metrics AS (
+      SELECT 
+        a.id,
+        a.full_name,
+        a.aliases,
+        a.gang_affiliation,
+        COALESCE(NULLIF(a.total_prior_arrests, '')::int, 0) as priors,
+        a.is_repeat_offender,
+        COUNT(DISTINCT j2.accused_id)::int as degree,
+        COUNT(DISTINCT j1.case_id)::int as total_cases,
+        COUNT(*) FILTER (WHERE c.priority = 'Critical')::int as critical_cases
+      FROM entities_accused a
+      JOIN case_accused_junction j1 ON a.id = j1.accused_id
+      JOIN cases_fir c ON j1.case_id = c.id
+      LEFT JOIN case_accused_junction j2 ON j1.case_id = j2.case_id AND j1.accused_id != j2.accused_id
+      GROUP BY a.id, a.full_name, a.aliases, a.gang_affiliation, a.total_prior_arrests, a.is_repeat_offender
+    )
+    SELECT 
+      id,
+      full_name,
+      aliases,
+      gang_affiliation,
+      priors,
+      is_repeat_offender,
+      degree,
+      total_cases,
+      critical_cases,
+      LEAST(100, ROUND(
+        priors * 8 + 
+        (CASE WHEN is_repeat_offender THEN 15 ELSE 0 END) +
+        (degree * 30.0 / 25.0) +
+        (critical_cases * 5.0) +
+        (total_cases * 1.5)
+      ))::int as composite_risk_score,
+      CASE 
+        WHEN critical_cases >= 4 AND degree >= 15 AND gang_affiliation IS NOT NULL AND gang_affiliation != '' THEN 'Kingpin'
+        WHEN degree >= 18 THEN 'Broker'
+        WHEN critical_cases >= 3 AND is_repeat_offender THEN 'Enforcer'
+        ELSE 'Associate'
+      END as network_role
+    FROM suspect_metrics
+    ${whereSql}
+    ORDER BY composite_risk_score DESC, degree DESC;
+  `);
+
+  const maxDegree = rawRows.reduce((m, r) => Math.max(m, Number(r.degree)), 1);
+
+  // Filter in memory for role/minDegree if requested
+  let filtered = Array.from(rawRows);
+  if (role) {
+    filtered = filtered.filter(r => r.network_role.toLowerCase() === role.toLowerCase());
+  }
+  if (minDegree > 0) {
+    filtered = filtered.filter(r => Number(r.degree) >= minDegree);
+  }
+
+  const sliced = filtered.slice(0, limit);
+  const suspectIds = sliced.map(s => s.id);
+
+  // Fetch top 3 collaborators for these suspects
+  const coAccusedMap = new Map<string, { suspectId: string; fullName: string; sharedCaseCount: number }[]>();
+  if (suspectIds.length > 0) {
+    const partnerRows = await db.execute<{
+      primary_id: string;
+      partner_id: string;
+      partner_name: string;
+      shared_count: number;
+    }>(sql`
+      SELECT 
+        j1.accused_id as primary_id,
+        j2.accused_id as partner_id,
+        a2.full_name as partner_name,
+        COUNT(DISTINCT j1.case_id)::int as shared_count
+      FROM case_accused_junction j1
+      JOIN case_accused_junction j2 ON j1.case_id = j2.case_id AND j1.accused_id != j2.accused_id
+      JOIN entities_accused a2 ON j2.accused_id = a2.id
+      WHERE j1.accused_id IN (${sql.join(suspectIds.map(id => sql`${id}`), sql`, `)})
+      GROUP BY j1.accused_id, j2.accused_id, a2.full_name
+      ORDER BY j1.accused_id, shared_count DESC;
+    `);
+
+    for (const pr of partnerRows) {
+      const list = coAccusedMap.get(pr.primary_id) || [];
+      if (list.length < 3) {
+        list.push({
+          suspectId: pr.partner_id,
+          fullName: pr.partner_name,
+          sharedCaseCount: Number(pr.shared_count)
+        });
+        coAccusedMap.set(pr.primary_id, list);
+      }
+    }
+  }
+
+  const suspects: SuspectCentralityMetrics[] = sliced.map(r => {
+    let aliasesList: string[] = [];
+    if (Array.isArray(r.aliases)) {
+      aliasesList = r.aliases;
+    } else if (typeof r.aliases === 'string') {
+      try { aliasesList = JSON.parse(r.aliases); } catch { aliasesList = [r.aliases]; }
+    }
+
+    const degree = Number(r.degree);
+    const normalizedDegree = Math.round((degree / maxDegree) * 100) / 100;
+    const pagerankScore = Math.round((normalizedDegree * 0.7 + (Number(r.critical_cases) / 10) * 0.3) * 100) / 100;
+
+    return {
+      suspectId: r.id,
+      fullName: r.full_name,
+      aliases: aliasesList,
+      gangAffiliation: r.gang_affiliation || undefined,
+      degreeCentrality: degree,
+      normalizedDegree,
+      pagerankScore: Math.min(1.0, pagerankScore),
+      totalCases: Number(r.total_cases),
+      criticalCasesCount: Number(r.critical_cases),
+      priorArrests: Number(r.priors),
+      isRepeatOffender: Boolean(r.is_repeat_offender),
+      compositeRiskScore: Number(r.composite_risk_score),
+      networkRole: r.network_role,
+      topCoAccused: coAccusedMap.get(r.id) || []
+    };
+  });
+
+  const summary = {
+    totalSuspectsAnalyzed: rawRows.length,
+    kingpinCount: rawRows.filter(r => r.network_role === 'Kingpin').length,
+    brokerCount: rawRows.filter(r => r.network_role === 'Broker').length,
+    enforcerCount: rawRows.filter(r => r.network_role === 'Enforcer').length,
+    associateCount: rawRows.filter(r => r.network_role === 'Associate').length,
+    averageRiskScore: Math.round(rawRows.reduce((acc, r) => acc + Number(r.composite_risk_score), 0) / (rawRows.length || 1))
+  };
+
+  return { suspects, summary };
+}
+
+// GET /api/network/centrality - Network centrality leaderboard and role analysis
+networkRouter.get('/centrality', async (req, res) => {
+  try {
+    const { role, minDegree, gang, limit = '50' } = req.query;
+    const limitNum = Math.min(360, Math.max(1, parseInt(String(limit), 10) || 50));
+    const minDegreeNum = parseInt(String(minDegree), 10) || 0;
+
+    const { suspects, summary } = await getSuspectCentralityData({
+      role: role ? String(role) : undefined,
+      minDegree: minDegreeNum,
+      gang: gang ? String(gang) : undefined,
+      limit: limitNum
+    });
+
+    const response: ApiResponse<NetworkCentralityResponse> = {
+      success: true,
+      data: { suspects, summary },
+      meta: {
+        total: suspects.length,
+        timestamp: new Date().toISOString()
+      }
+    };
+    res.json(response);
+  } catch (error: any) {
+    console.error('[Network Centrality Error]:', error);
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+  }
+});
+
+// GET /api/network/accused/:id/metrics - Deep centrality and relational threat metrics for single suspect
+networkRouter.get('/accused/:id/metrics', async (req, res) => {
+  try {
+    const suspectId = req.params.id;
+    const { suspects } = await getSuspectCentralityData({ limit: 400 });
+
+    const index = suspects.findIndex(s => s.suspectId === suspectId);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Suspect not found in network' });
+    }
+
+    const suspect = suspects[index];
+    const rank = index + 1;
+
+    res.json({
+      success: true,
+      data: {
+        ...suspect,
+        networkRank: rank,
+        totalNetworkSuspects: suspects.length,
+        percentile: Math.round(((suspects.length - rank) / suspects.length) * 100)
+      },
+      meta: { timestamp: new Date().toISOString() }
+    });
+  } catch (error: any) {
+    console.error('[Suspect Metrics Error]:', error);
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+  }
+});
 
 // GET /api/network/topology - Full syndicate and co-accused network graph
 networkRouter.get('/topology', async (req, res) => {
@@ -60,18 +292,32 @@ networkRouter.get('/topology', async (req, res) => {
           .from(entitiesAccused)
           .limit(limitNum);
 
-    const nodes: GraphNode[] = suspects.map((s) => ({
-      id: s.id,
-      type: 'suspect',
-      label: s.fullName,
-      subLabel: (s.aliases as string[])?.[0] || s.gangAffiliation || undefined,
-      severity: (s.riskLevel || 'Medium') as any,
-      riskScore: Math.min(100, parseInt(s.totalPriorArrests || '0', 10) * 15 + (s.isRepeatOffender ? 20 : 0)),
-      data: {
-        ...s,
-        totalPriorArrests: parseInt(s.totalPriorArrests || '0', 10)
-      }
-    }));
+    // Fetch metrics to enrich nodes with role and composite risk score
+    const metricsResult = await getSuspectCentralityData({ limit: 400 });
+    const metricsMap = new Map(metricsResult.suspects.map(s => [s.suspectId, s]));
+
+    const nodes: GraphNode[] = suspects.map((s) => {
+      const metric = metricsMap.get(s.id);
+      const degree = metric?.degreeCentrality || 0;
+      const role = metric?.networkRole || 'Associate';
+      const risk = metric?.compositeRiskScore || Math.min(100, parseInt(s.totalPriorArrests || '0', 10) * 15);
+
+      return {
+        id: s.id,
+        type: 'suspect',
+        label: s.fullName,
+        subLabel: `${role}${s.gangAffiliation ? ` • ${s.gangAffiliation}` : ''}`,
+        severity: (s.riskLevel || 'Medium') as any,
+        riskScore: risk,
+        data: {
+          ...s,
+          degree,
+          networkRole: role,
+          compositeRiskScore: risk,
+          totalPriorArrests: parseInt(s.totalPriorArrests || '0', 10)
+        }
+      };
+    });
 
     const syndicates = curatedCrimeDataset.syndicates || [];
 

@@ -39,3 +39,39 @@ export interface NetworkTopologyPayload {
   edges: GraphEdge[];
   syndicates: SyndicateProfile[];
 }
+
+export type NetworkRole = 'Kingpin' | 'Broker' | 'Enforcer' | 'Associate';
+
+export interface SuspectCentralityMetrics {
+  suspectId: string;
+  fullName: string;
+  aliases: string[];
+  gangAffiliation?: string;
+  degreeCentrality: number;     // Number of distinct co-accused partners
+  normalizedDegree: number;     // 0.0 - 1.0 (relative to max in network)
+  pagerankScore: number;        // 0.0 - 1.0 (iterative centrality score)
+  totalCases: number;
+  criticalCasesCount: number;
+  priorArrests: number;
+  isRepeatOffender: boolean;
+  compositeRiskScore: number;   // 0 - 100
+  networkRole: NetworkRole;
+  topCoAccused: {
+    suspectId: string;
+    fullName: string;
+    sharedCaseCount: number;
+  }[];
+}
+
+export interface NetworkCentralityResponse {
+  suspects: SuspectCentralityMetrics[];
+  summary: {
+    totalSuspectsAnalyzed: number;
+    kingpinCount: number;
+    brokerCount: number;
+    enforcerCount: number;
+    associateCount: number;
+    averageRiskScore: number;
+  };
+}
+

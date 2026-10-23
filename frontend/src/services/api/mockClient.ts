@@ -8,7 +8,10 @@ import {
   TacticalAnalyticsSummary,
   ApiResponse,
   GangTerritory,
-  SpatioTemporalDensityResponse
+  SpatioTemporalDensityResponse,
+  NetworkRole,
+  SuspectCentralityMetrics,
+  NetworkCentralityResponse
 } from '@kestrel/shared';
 
 export class MockIntelClient {
@@ -234,7 +237,81 @@ export class MockIntelClient {
       meta: { timestamp: new Date().toISOString() }
     };
   }
+
+  async getNetworkCentrality(filters?: { role?: string; minDegree?: number; limit?: number }): Promise<ApiResponse<NetworkCentralityResponse>> {
+    const list: SuspectCentralityMetrics[] = this.suspects.map((s, idx) => {
+      const priors = parseInt(String(s.totalPriorArrests || '0'), 10);
+      const isRepeat = Boolean(s.isRepeatOffender);
+      const degree = (idx % 5) * 4 + 3;
+      const criticalCases = (idx % 3) * 2;
+      const totalCases = 4 + degree;
+      const risk = Math.min(100, priors * 8 + (isRepeat ? 15 : 0) + Math.round(degree * 1.2) + criticalCases * 5);
+      
+      let role: NetworkRole = 'Associate';
+      if (criticalCases >= 4 && degree >= 15) role = 'Kingpin';
+      else if (degree >= 16) role = 'Broker';
+      else if (criticalCases >= 3 && isRepeat) role = 'Enforcer';
+
+      return {
+        suspectId: s.id,
+        fullName: s.fullName,
+        aliases: s.aliases || [],
+        gangAffiliation: s.gangAffiliation,
+        degreeCentrality: degree,
+        normalizedDegree: Math.round((degree / 25) * 100) / 100,
+        pagerankScore: Math.round((degree / 25 * 0.7 + (criticalCases / 10) * 0.3) * 100) / 100,
+        totalCases,
+        criticalCasesCount: criticalCases,
+        priorArrests: priors,
+        isRepeatOffender: isRepeat,
+        compositeRiskScore: risk,
+        networkRole: role,
+        topCoAccused: []
+      };
+    });
+
+    list.sort((a, b) => b.compositeRiskScore - a.compositeRiskScore);
+
+    let filtered = list;
+    if (filters?.role) {
+      filtered = filtered.filter(s => s.networkRole.toLowerCase() === filters.role?.toLowerCase());
+    }
+    if (filters?.minDegree) {
+      filtered = filtered.filter(s => s.degreeCentrality >= filters.minDegree!);
+    }
+    if (filters?.limit) {
+      filtered = filtered.slice(0, filters.limit);
+    }
+
+    return {
+      success: true,
+      data: {
+        suspects: filtered,
+        summary: {
+          totalSuspectsAnalyzed: list.length,
+          kingpinCount: list.filter(s => s.networkRole === 'Kingpin').length,
+          brokerCount: list.filter(s => s.networkRole === 'Broker').length,
+          enforcerCount: list.filter(s => s.networkRole === 'Enforcer').length,
+          associateCount: list.filter(s => s.networkRole === 'Associate').length,
+          averageRiskScore: 68
+        }
+      },
+      meta: { total: filtered.length, timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getSuspectCentralityMetrics(suspectId: string): Promise<ApiResponse<SuspectCentralityMetrics & { networkRank: number }>> {
+    const all = await this.getNetworkCentrality();
+    const index = all.data.suspects.findIndex(s => s.suspectId === suspectId);
+    const found = all.data.suspects[index] || all.data.suspects[0];
+    return {
+      success: !!found,
+      data: { ...found, networkRank: index >= 0 ? index + 1 : 1 },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
 }
 
 export const mockClient = new MockIntelClient();
+
 
