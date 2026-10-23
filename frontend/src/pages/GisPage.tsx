@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Map as MapIcon,
@@ -33,10 +33,12 @@ import {
   Popup,
   CircleMarker,
   useMap,
+  useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import { apiClient } from "@/services/api/client";
-import { FIRCase } from "@kestrel/shared";
+import { useInvestigationContext } from "@/store/useInvestigationContext";
+import type { FIRCase, BoundingBox } from "@kestrel/shared";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +101,44 @@ function MapAutoCentering({
   return null;
 }
 
+// PostGIS Live Viewport Synchronizer Component
+interface MapViewportSyncProps {
+  enabled: boolean;
+  onBoundsChange: (bounds: BoundingBox) => void;
+}
+
+function MapViewportSync({ enabled, onBoundsChange }: MapViewportSyncProps) {
+  const map = useMapEvents({
+    moveend: () => {
+      if (!enabled) return;
+      const b = map.getBounds();
+      onBoundsChange([
+        [b.getSouth(), b.getWest()],
+        [b.getNorth(), b.getEast()],
+      ]);
+    },
+    zoomend: () => {
+      if (!enabled) return;
+      const b = map.getBounds();
+      onBoundsChange([
+        [b.getSouth(), b.getWest()],
+        [b.getNorth(), b.getEast()],
+      ]);
+    },
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const b = map.getBounds();
+    onBoundsChange([
+      [b.getSouth(), b.getWest()],
+      [b.getNorth(), b.getEast()],
+    ]);
+  }, [enabled, map, onBoundsChange]);
+
+  return null;
+}
+
 export function GisPage() {
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,9 +187,70 @@ export function GisPage() {
   const [activeCenter, setActiveCenter] = useState<[number, number]>(defaultCenter);
   const [activeZoom, setActiveZoom] = useState<number>(12);
 
+  // PostGIS Viewport Sync State
+  const [viewportSyncEnabled, setViewportSyncEnabled] = useState(true);
+  const [isQueryingPostGIS, setIsQueryingPostGIS] = useState(false);
+  const [postgisLatency, setPostgisLatency] = useState<number | null>(null);
+  const [activeBounds, setActiveBounds] = useState<BoundingBox | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleBoundsChange = useCallback(
+    (bounds: BoundingBox) => {
+      setActiveBounds(bounds);
+      useInvestigationContext.getState().setActiveBoundingBox(bounds);
+
+      if (!viewportSyncEnabled) return;
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(async () => {
+        setIsQueryingPostGIS(true);
+        const start = Date.now();
+        try {
+          const res = await apiClient.getSpatialIncidents(bounds, {
+            crimeCategory: selectedCategory !== "all" ? selectedCategory : undefined,
+            priority: selectedPriority !== "all" ? selectedPriority : undefined,
+            status: selectedStatus !== "all" ? selectedStatus : undefined,
+            policeStation: selectedStation !== "all" ? selectedStation : undefined,
+            district: selectedDistrict !== "all" ? selectedDistrict : undefined,
+            searchQuery: searchQuery.trim() || undefined,
+            limit: 1500,
+          });
+          if (res.success && res.data) {
+            setCases(res.data);
+            setPostgisLatency(Date.now() - start);
+          }
+        } catch (err: any) {
+          console.warn("[PostGIS Viewport Sync Error]:", err);
+        } finally {
+          setIsQueryingPostGIS(false);
+        }
+      }, 350);
+    },
+    [
+      viewportSyncEnabled,
+      selectedCategory,
+      selectedPriority,
+      selectedStatus,
+      selectedStation,
+      selectedDistrict,
+      searchQuery,
+    ]
+  );
+
   useEffect(() => {
     apiClient
-      .getCases()
+      .getSpatialIncidents(null, { limit: 1500 })
       .then((res) => {
         setCases(res.data);
         if (res.data.length > 0) {
@@ -163,6 +264,22 @@ export function GisPage() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (activeBounds && viewportSyncEnabled) {
+      handleBoundsChange(activeBounds);
+    }
+  }, [
+    selectedCategory,
+    selectedPriority,
+    selectedStatus,
+    selectedStation,
+    selectedDistrict,
+    searchQuery,
+    handleBoundsChange,
+    activeBounds,
+    viewportSyncEnabled,
+  ]);
 
   // Filter Unique Lists
   const districts = useMemo(
@@ -337,6 +454,35 @@ export function GisPage() {
         }
         actions={
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Live PostGIS Viewport Status Badge */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-elevated/80 border border-border font-mono text-[11px] shrink-0">
+              <span className={`h-2 w-2 rounded-full ${isQueryingPostGIS ? "bg-amber-400 animate-ping" : "bg-emerald-400 animate-pulse"}`} />
+              <span className="text-muted-foreground">POSTGIS VIEWPORT:</span>
+              <span className="font-bold text-foreground">{filteredCases.length} INCIDENTS</span>
+              {postgisLatency !== null && (
+                <span className="text-primary text-[10px]">({postgisLatency}ms)</span>
+              )}
+            </div>
+
+            {/* Toggle Viewport Sync Button */}
+            <Button
+              variant={viewportSyncEnabled ? "tactical" : "outline"}
+              size="sm"
+              onClick={() => {
+                const next = !viewportSyncEnabled;
+                setViewportSyncEnabled(next);
+                setToastMessage(next ? "Live PostGIS Viewport Sync activated." : "Viewport Sync paused. Showing fixed dataset.");
+                setTimeout(() => setToastMessage(null), 2500);
+                if (next && activeBounds) {
+                  handleBoundsChange(activeBounds);
+                }
+              }}
+              className="gap-1.5 font-mono text-xs"
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span>{viewportSyncEnabled ? "SYNC: ON" : "SYNC: PAUSED"}</span>
+            </Button>
+
             <Button
               variant={mapMode === "standard" ? "tactical" : "outline"}
               size="sm"
@@ -793,6 +939,12 @@ export function GisPage() {
               >
                 {/* Dynamically adjust map viewport on selection */}
                 <MapAutoCentering center={activeCenter} zoom={activeZoom} />
+
+                {/* Live PostGIS Viewport Synchronizer */}
+                <MapViewportSync
+                  enabled={viewportSyncEnabled}
+                  onBoundsChange={handleBoundsChange}
+                />
 
                 {/* MapTiler Dark Matter or MapTiler Streets Tile Layer */}
                 {mapTileStyle === "dark" ? (

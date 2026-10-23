@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { casesFir } from '../db/schema';
-import { and, eq, ilike, sql } from 'drizzle-orm';
+import { and, or, eq, ilike, sql } from 'drizzle-orm';
 import type { 
   ApiResponse, 
   FIRCase, 
@@ -17,9 +17,21 @@ export const spatialRouter = Router();
 // GET /api/spatial/incidents - PostGIS Bounding Box query
 spatialRouter.get('/incidents', async (req, res) => {
   try {
-    const { south, west, north, east, crimeCategory, priority, limit = '200' } = req.query;
+    const { 
+      south, 
+      west, 
+      north, 
+      east, 
+      crimeCategory, 
+      priority, 
+      status, 
+      policeStation, 
+      district, 
+      searchQuery, 
+      limit = '1000' 
+    } = req.query;
 
-    const limitNum = Math.min(1000, Math.max(1, parseInt(String(limit), 10) || 200));
+    const limitNum = Math.min(2500, Math.max(1, parseInt(String(limit), 10) || 1000));
     const conditions = [];
 
     if (south && west && north && east) {
@@ -38,6 +50,25 @@ spatialRouter.get('/incidents', async (req, res) => {
     }
     if (priority) {
       conditions.push(eq(casesFir.priority, String(priority)));
+    }
+    if (status) {
+      conditions.push(eq(casesFir.status, String(status)));
+    }
+    if (policeStation) {
+      conditions.push(ilike(casesFir.policeStation, `%${String(policeStation)}%`));
+    }
+    if (district) {
+      conditions.push(ilike(casesFir.district, `%${String(district)}%`));
+    }
+    if (searchQuery) {
+      const q = `%${String(searchQuery)}%`;
+      conditions.push(
+        or(
+          ilike(casesFir.firNumber, q),
+          ilike(casesFir.description, q),
+          ilike(casesFir.policeStation, q)
+        )
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

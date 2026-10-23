@@ -296,8 +296,8 @@ gantt
 - [x] **Task 3.2: Wire Ambient Copilot to Streaming Backend**
   - [x] Sub-task 3.2.1: Connect EventSource / fetch stream reader in frontend to Groq SSE endpoint.
   - [x] Sub-task 3.2.2: Transmit active UI state envelope (focused suspect, map bounds, date range) in prompt payload.
-- [ ] **Task 3.3: PostGIS Viewport Sync**
-  - [ ] Sub-task 3.3.1: Debounce Leaflet map movement events to query live PostGIS bounding box incidents.
+- [x] **Task 3.3: PostGIS Viewport Sync**
+  - [x] Sub-task 3.3.1: Debounce Leaflet map movement events to query live PostGIS bounding box incidents.
 - [ ] **Task 3.4: Offline Fallback Fail-Safe Verification**
   - [ ] Sub-task 3.4.1: Add global UI toggle `Offline Mode [ON/OFF]`.
   - [ ] Sub-task 3.4.2: Ensure frontend gracefully falls back to local in-memory fixtures if the backend is unreachable.

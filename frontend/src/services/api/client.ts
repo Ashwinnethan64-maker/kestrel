@@ -33,6 +33,10 @@ export interface AccusedFilterParams {
 export interface SpatialIncidentOptions {
   crimeCategory?: string;
   priority?: string;
+  status?: string;
+  policeStation?: string;
+  district?: string;
+  searchQuery?: string;
   limit?: number;
 }
 
@@ -153,7 +157,11 @@ class LiveOrMockClient {
     }
     if (options?.crimeCategory) query.set('crimeCategory', options.crimeCategory);
     if (options?.priority) query.set('priority', options.priority);
-    query.set('limit', options?.limit ? String(options.limit) : '1000');
+    if (options?.status) query.set('status', options.status);
+    if (options?.policeStation) query.set('policeStation', options.policeStation);
+    if (options?.district) query.set('district', options.district);
+    if (options?.searchQuery) query.set('searchQuery', options.searchQuery);
+    query.set('limit', options?.limit ? String(options.limit) : '1500');
 
     return this.safeFetch<FIRCase[]>(
       `/api/spatial/incidents?${query.toString()}`,
