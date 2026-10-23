@@ -156,18 +156,18 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
 ### Phase 4: High-Level Zonal Strategic Command Deck (DCP Altitude)
 *Priority: High | Goal: Macro command view showing city-wide patterns, cross-station syndicates, and station accountability.*
 
-- [ ] **Task 4.1: Zonal Crime Heatmap & Spatial Density (`ZonalStrategicLens.tsx`)**
-  - [ ] **Sub-task 4.1.1**: Create `ZonalStrategicLens.tsx` with macro Leaflet map of Bengaluru East Division and PostGIS spatial density heatmap layer.
-  - [ ] **Sub-task 4.1.2**: Render Police Station Centroid markers displaying live incident volume callouts and severity flags.
-  - [ ] **Sub-task 4.1.3**: Build Night Patrol Hotspot Recommendation Banner with 1-click *"Deploy Hoysala Patrol Checkpoints"*.
+- [x] **Task 4.1: Zonal Crime Heatmap & Spatial Density (`ZonalStrategicLens.tsx`)**
+  - [x] **Sub-task 4.1.1**: Create `ZonalStrategicLens.tsx` with macro Leaflet map of Bengaluru East Division and PostGIS spatial density heatmap layer.
+  - [x] **Sub-task 4.1.2**: Render Police Station Centroid markers displaying live incident volume callouts and severity flags.
+  - [x] **Sub-task 4.1.3**: Build Night Patrol Hotspot Recommendation Banner with 1-click *"Deploy Hoysala Patrol Checkpoints"*.
 
-- [ ] **Task 4.2: Inter-Station Syndicate Topology Canvas**
-  - [ ] **Sub-task 4.2.1**: Build macro React Flow syndicate graph visualizing organized crime rings spanning multiple stations (Whitefield Cyber Mule Ring, East Ring Syndicate).
-  - [ ] **Sub-task 4.2.2**: Wire syndicate node selection to filter the map to cases linked to that syndicate.
+- [x] **Task 4.2: Inter-Station Syndicate Topology Canvas**
+  - [x] **Sub-task 4.2.1**: Build macro React Flow syndicate graph visualizing organized crime rings spanning multiple stations (Whitefield Cyber Mule Ring, East Ring Syndicate).
+  - [x] **Sub-task 4.2.2**: Wire syndicate node selection to filter the map to cases linked to that syndicate.
 
-- [ ] **Task 4.3: Station Accountability & Clearance Matrix**
-  - [ ] **Sub-task 4.3.1**: Build Station Workload & Performance Table (Station, Total FIRs, Open Cases, Clearance Rate %, Average Days to Charge-Sheet, Overdue Warrants).
-  - [ ] **Sub-task 4.3.2**: Build Statutory Default Bail Warning Strip flagging cases approaching Section 187 BNSS (167 CrPC) 60/90-day custody limits.
+- [x] **Task 4.3: Station Accountability & Clearance Matrix**
+  - [x] **Sub-task 4.3.1**: Build Station Workload & Performance Table (Station, Total FIRs, Open Cases, Clearance Rate %, Average Days to Charge-Sheet, Overdue Warrants).
+  - [x] **Sub-task 4.3.2**: Build Statutory Default Bail Warning Strip flagging cases approaching Section 187 BNSS (167 CrPC) 60/90-day custody limits.
 
 ---
 

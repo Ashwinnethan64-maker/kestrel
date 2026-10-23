@@ -106,6 +106,12 @@ export const liveClient = {
   getEvidence: (caseId: string): Promise<CaseEvidence[]> =>
     apiFetch<CaseEvidence[]>(`/evidence?caseId=${encodeURIComponent(caseId)}`).catch(() => []),
 
+  /** GET /api/syndicates — cross-station criminal rings */
+  getSyndicates: (): Promise<any[]> =>
+    apiFetch<any[]>('/syndicates').catch(() =>
+      import('@kestrel/shared').then((m) => (m.curatedCrimeDataset as any).syndicates || [])
+    ),
+
   /**
    * POST /api/copilot/query — SSE streaming Copilot query.
    * Returns an AbortController; call `.abort()` to cancel mid-stream.

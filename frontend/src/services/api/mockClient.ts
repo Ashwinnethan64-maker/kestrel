@@ -278,6 +278,9 @@ export const mockClient = {
   getEvidence: (caseId: string): Promise<CaseEvidence[]> =>
     Promise.resolve(MOCK_EVIDENCE.filter(e => e.caseId === caseId)),
 
+  getSyndicates: (): Promise<any[]> =>
+    Promise.resolve((curatedCrimeDataset as any).syndicates || []),
+
   streamCopilotQuery: (
     envelope: CopilotPromptEnvelope,
     handlers: SSEHandlers
