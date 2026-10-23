@@ -19,11 +19,11 @@ casesRouter.get('/', async (req, res) => {
       startDate,
       endDate,
       page = '1',
-      limit = '20'
+      limit = '100'
     } = req.query;
 
     const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 20));
+    const limitNum = Math.min(2500, Math.max(1, parseInt(String(limit), 10) || 100));
     const offset = (pageNum - 1) * limitNum;
 
     const conditions = [];

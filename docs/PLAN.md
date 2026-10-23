@@ -290,9 +290,9 @@ gantt
 *Priority: Critical | Team: Joint Cross-Cutting*  
 *Goal: Seamlessly connect frontend to live backend without merge conflicts or code rewrites.*
 
-- [ ] **Task 3.1: Switch Frontend API Client to Live Mode**
-  - [ ] Sub-task 3.1.1: Set `VITE_API_SOURCE=live` and configure Vite dev server proxy to `http://localhost:3000`.
-  - [ ] Sub-task 3.1.2: Validate all API response envelopes against `@shared/types`.
+- [x] **Task 3.1: Switch Frontend API Client to Live Mode**
+  - [x] Sub-task 3.1.1: Set `VITE_API_SOURCE=live` and configure Vite dev server proxy to `http://localhost:3000`.
+  - [x] Sub-task 3.1.2: Validate all API response envelopes against `@shared/types`.
 - [ ] **Task 3.2: Wire Ambient Copilot to Streaming Backend**
   - [ ] Sub-task 3.2.1: Connect EventSource / fetch stream reader in frontend to Groq SSE endpoint.
   - [ ] Sub-task 3.2.2: Transmit active UI state envelope (focused suspect, map bounds, date range) in prompt payload.

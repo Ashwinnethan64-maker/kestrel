@@ -11,15 +11,17 @@ accusedRouter.get('/', async (req, res) => {
   try {
     const {
       searchQuery,
+      search,
       riskLevel,
       gangAffiliation,
       isRepeatOffender,
       page = '1',
-      limit = '30'
+      limit = '100'
     } = req.query;
 
+    const effectiveSearch = searchQuery || search;
     const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 30));
+    const limitNum = Math.min(1000, Math.max(1, parseInt(String(limit), 10) || 100));
     const offset = (pageNum - 1) * limitNum;
 
     const conditions = [];
@@ -33,8 +35,8 @@ accusedRouter.get('/', async (req, res) => {
     if (isRepeatOffender !== undefined) {
       conditions.push(eq(entitiesAccused.isRepeatOffender, String(isRepeatOffender) === 'true'));
     }
-    if (searchQuery) {
-      const q = `%${String(searchQuery)}%`;
+    if (effectiveSearch) {
+      const q = `%${String(effectiveSearch)}%`;
       conditions.push(
         or(
           ilike(entitiesAccused.fullName, q),
