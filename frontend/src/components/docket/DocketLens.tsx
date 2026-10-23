@@ -9,6 +9,7 @@ import { useCommandDeckStore } from '@/store/useCommandDeckStore';
 import { useIntelClient } from '@/services/api/intelClient';
 import { DocketCaseCard } from './DocketCaseCard';
 import { ShiftTaskList } from './ShiftTaskList';
+import { StationGdTicker } from './StationGdTicker';
 import type { AccusedSuspect, FIRCase } from '@kestrel/shared';
 
 export function DocketLens() {
@@ -304,6 +305,13 @@ export function DocketLens() {
             </div>
           </div>
         )}
+
+        {/* Station GD Ticker */}
+        <StationGdTicker
+          cases={cases}
+          suspects={suspects}
+          station={activeOfficer?.station}
+        />
       </div>
     </div>
   );

@@ -120,9 +120,9 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
   - [x] **Sub-task 2.2.2**: Wire interactive 1-click completion checkboxes sending `PATCH /api/tasks/:id` with instant visual state feedback.
   - [x] **Sub-task 2.2.3**: Implement inline "Quick Add Task" action.
 
-- [ ] **Task 2.3: Station General Diary (GD) Live Event Ticker**
-  - [ ] **Sub-task 2.3.1**: Build `StationGdTicker.tsx` rendering live chronological station log events.
-  - [ ] **Sub-task 2.3.2**: Build Threat Anomaly Callout Card highlighting urgent regional alerts (e.g. repeat offender bailed near an active crime scene).
+- [x] **Task 2.3: Station General Diary (GD) Live Event Ticker**
+  - [x] **Sub-task 2.3.1**: Build `StationGdTicker.tsx` rendering live chronological station log events.
+  - [x] **Sub-task 2.3.2**: Build Threat Anomaly Callout Card highlighting urgent regional alerts (e.g. repeat offender bailed near an active crime scene).
 
 ---
 
