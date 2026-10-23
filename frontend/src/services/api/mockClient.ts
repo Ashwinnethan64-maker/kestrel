@@ -242,6 +242,18 @@ export const mockClient = {
     return Promise.resolve(MOCK_TASKS[idx]);
   },
 
+  createTask: (
+    task: Omit<InvestigativeTask, 'id' | 'createdAt'>
+  ): Promise<InvestigativeTask> => {
+    const newTask: InvestigativeTask = {
+      ...task,
+      id: `TASK-${Date.now().toString().slice(-4)}`,
+      createdAt: new Date().toISOString()
+    };
+    MOCK_TASKS.unshift(newTask);
+    return Promise.resolve(newTask);
+  },
+
   getAccused: (id: string): Promise<AccusedSuspect | null> => {
     const s = MOCK_ACCUSED.find(x => x.id === id) ?? null;
     return Promise.resolve(s);

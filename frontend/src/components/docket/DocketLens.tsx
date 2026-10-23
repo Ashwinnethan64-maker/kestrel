@@ -8,6 +8,7 @@ import {
 import { useCommandDeckStore } from '@/store/useCommandDeckStore';
 import { useIntelClient } from '@/services/api/intelClient';
 import { DocketCaseCard } from './DocketCaseCard';
+import { ShiftTaskList } from './ShiftTaskList';
 import type { AccusedSuspect, FIRCase } from '@kestrel/shared';
 
 export function DocketLens() {
@@ -185,22 +186,26 @@ export function DocketLens() {
         </div>
       </div>
 
-      {/* 2. 3-Column Tactical Docket Grid */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
+      {/* 2. Tactical Content Area: Shift Tasks + 3-Column Docket */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Shift Tasks Checklist */}
+        <ShiftTaskList cases={cases} />
+
+        {/* 3-Column Tactical Docket Grid */}
         {isCasesLoading ? (
-          <div className="h-full flex items-center justify-center flex-col gap-3 text-slate-400">
+          <div className="py-16 flex items-center justify-center flex-col gap-3 text-slate-400">
             <div className="w-8 h-8 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
             <span className="font-mono text-xs tracking-wider text-cyan-400">
               SYNCHRONIZING DOCKET LEDGER...
             </span>
           </div>
         ) : casesError ? (
-          <div className="h-full flex items-center justify-center flex-col gap-2 text-red-400">
+          <div className="py-16 flex items-center justify-center flex-col gap-2 text-red-400">
             <AlertOctagon className="w-8 h-8" />
             <span className="font-mono text-sm">Failed to load docket cases</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-w-[900px]">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[500px]">
             {/* Column 1: Critical & Violent */}
             <div className="flex flex-col h-full bg-[#080f1a]/70 rounded-xl border border-red-500/20 overflow-hidden">
               <div className="p-3.5 border-b border-red-500/20 bg-red-950/20 flex items-center justify-between">

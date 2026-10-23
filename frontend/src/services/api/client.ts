@@ -84,6 +84,15 @@ export const liveClient = {
       body: JSON.stringify({ status, notes })
     }),
 
+  /** POST /api/tasks — create new task */
+  createTask: (
+    task: Omit<InvestigativeTask, 'id' | 'createdAt'>
+  ): Promise<InvestigativeTask> =>
+    apiFetch<InvestigativeTask>('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(task)
+    }),
+
   /** GET /api/accused/:id */
   getAccused: (id: string): Promise<AccusedSuspect | null> =>
     apiFetch<AccusedSuspect>(`/accused/${encodeURIComponent(id)}`).catch(() => null),

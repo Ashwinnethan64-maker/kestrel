@@ -115,10 +115,10 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
   - [x] **Sub-task 2.1.1**: Create `frontend/src/components/docket/DocketLens.tsx` with officer greeting banner and 3-column tactical docket grid (Critical Violent, In-Progress, Statutory Remand Deadlines).
   - [x] **Sub-task 2.1.2**: Build `DocketCaseCard.tsx` with FIR badge, incident date, category strip, prime accused details, statutory clock indicator (`"⏳ 42 days to charge-sheet"`), and 1-click `openCaseNexus(case.id)`.
 
-- [ ] **Task 2.2: Shift Task Checklist & Statutory Deadlines**
-  - [ ] **Sub-task 2.2.1**: Implement `ShiftTaskList.tsx` inside the docket rendering today's actionable investigative tasks (CCTV, FSL Ballistics, Witness 180 BNSS, Interrogations).
-  - [ ] **Sub-task 2.2.2**: Wire interactive 1-click completion checkboxes sending `PATCH /api/tasks/:id` with instant visual state feedback.
-  - [ ] **Sub-task 2.2.3**: Implement inline "Quick Add Task" action.
+- [x] **Task 2.2: Shift Task Checklist & Statutory Deadlines**
+  - [x] **Sub-task 2.2.1**: Implement `ShiftTaskList.tsx` inside the docket rendering today's actionable investigative tasks (CCTV, FSL Ballistics, Witness 180 BNSS, Interrogations).
+  - [x] **Sub-task 2.2.2**: Wire interactive 1-click completion checkboxes sending `PATCH /api/tasks/:id` with instant visual state feedback.
+  - [x] **Sub-task 2.2.3**: Implement inline "Quick Add Task" action.
 
 - [ ] **Task 2.3: Station General Diary (GD) Live Event Ticker**
   - [ ] **Sub-task 2.3.1**: Build `StationGdTicker.tsx` rendering live chronological station log events.

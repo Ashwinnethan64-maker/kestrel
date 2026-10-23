@@ -304,6 +304,75 @@ tasksRouter.get('/', async (req, res) => {
   }
 });
 
+// POST /api/tasks - Create new investigative task
+tasksRouter.post('/', async (req, res) => {
+  const { caseId, assignedOfficerId, title, taskType, priority, status, dueDate, notes } = req.body;
+
+  if (!title || !taskType) {
+    res.status(400).json({ success: false, error: 'Title and taskType are required' });
+    return;
+  }
+
+  const taskId = `TASK-${Date.now().toString().slice(-6)}`;
+  const now = new Date();
+
+  try {
+    const inserted = await db
+      .insert(investigativeTasks)
+      .values({
+        id: taskId,
+        caseId: caseId || 'CASE-2024-INDR-0102',
+        assignedOfficerId: assignedOfficerId || null,
+        title,
+        taskType,
+        priority: priority || 'Medium',
+        status: status || 'Pending',
+        dueDate: dueDate ? new Date(dueDate) : null,
+        notes: notes || null,
+        createdAt: now
+      })
+      .returning();
+
+    if (inserted.length > 0) {
+      const r = inserted[0];
+      const task: InvestigativeTask = {
+        id: r.id,
+        caseId: r.caseId,
+        assignedOfficerId: r.assignedOfficerId,
+        title: r.title,
+        taskType: r.taskType as TaskType,
+        priority: (r.priority || 'Medium') as TaskPriority,
+        status: (r.status || 'Pending') as TaskStatus,
+        dueDate: r.dueDate ? r.dueDate.toISOString() : null,
+        completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+        notes: r.notes,
+        createdAt: r.createdAt ? r.createdAt.toISOString() : now.toISOString()
+      };
+      res.status(201).json({ success: true, data: task });
+      return;
+    }
+  } catch (error: any) {
+    console.warn('[Tasks Route] DB insert failed, saving to fallback tasks:', error.message);
+  }
+
+  // Fallback in-memory insertion
+  const fallbackTask: InvestigativeTask = {
+    id: taskId,
+    caseId: caseId || 'CASE-2024-INDR-0102',
+    assignedOfficerId: assignedOfficerId || null,
+    title,
+    taskType,
+    priority: priority || 'Medium',
+    status: status || 'Pending',
+    dueDate: dueDate || null,
+    completedAt: null,
+    notes: notes || null,
+    createdAt: now.toISOString()
+  };
+  DEFAULT_FALLBACK_TASKS.unshift(fallbackTask);
+  res.status(201).json({ success: true, data: fallbackTask });
+});
+
 // PATCH /api/tasks/:id - Update task status or notes
 tasksRouter.patch('/:id', async (req, res) => {
   const { id } = req.params;
