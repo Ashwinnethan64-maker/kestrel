@@ -101,10 +101,10 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
   - [x] **Sub-task 1.3.2**: Implement Persona/Role Switcher dropdown (`Insp. Vikram Patil [IO]`, `SI Ramesh [IO]`, `Dr. B. Ramesh, IPS [DCP]`).
   - [x] **Sub-task 1.3.3**: Implement Connectivity Status Pill with live click toggle between `LIVE BACKEND [●]` and `OFFLINE FAIL-SAFE [○]`.
 
-- [ ] **Task 1.4: Command Deck Shell Container (`DeckShell.tsx` & Keyboard Bus)**
-  - [ ] **Sub-task 1.4.1**: Create `frontend/src/components/deck/DeckShell.tsx` with high-contrast dark SOC 3-pane split layout (Left/Center 65% Tactical Lens, Right 35% Ambient Copilot & Caseboard, Bottom 48px Scrubber).
-  - [ ] **Sub-task 1.4.2**: Implement global keyboard hotkeys (`1` Docket, `2` Case Nexus, `3` Zonal Radar, `Cmd+K` Search, `Esc` Back).
-  - [ ] **Sub-task 1.4.3**: Create `frontend/src/components/deck/CommandPalette.tsx` for instant omni-search across FIR numbers, suspects, and tactical actions.
+- [x] **Task 1.4: Command Deck Shell Container (`DeckShell.tsx` & Keyboard Bus)**
+  - [x] **Sub-task 1.4.1**: Create `frontend/src/components/deck/DeckShell.tsx` with high-contrast dark SOC 3-pane split layout (Left/Center 65% Tactical Lens, Right 35% Ambient Copilot & Caseboard, Bottom 48px Scrubber).
+  - [x] **Sub-task 1.4.2**: Implement global keyboard hotkeys (`1` Docket, `2` Case Nexus, `3` Zonal Radar, `Cmd+K` Search, `Esc` Back).
+  - [x] **Sub-task 1.4.3**: Create `frontend/src/components/deck/CommandPalette.tsx` for instant omni-search across FIR numbers, suspects, and tactical actions.
 
 ---
 
