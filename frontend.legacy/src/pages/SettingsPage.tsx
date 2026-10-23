@@ -23,18 +23,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { useProfileStore } from "@/store/useProfileStore";
 import { apiClient } from "@/services/api/client";
 
 export function SettingsPage() {
   const { isOfflineMode, setOfflineMode, triggerDataRefresh } = useInvestigationContext();
 
-  // Profile Information State (Exact 6 fields)
-  const [fullName, setFullName] = useState("Inspector R. Sharma");
-  const [badgeNumber, setBadgeNumber] = useState("KSP-4491");
-  const [emailAddress, setEmailAddress] = useState("r.sharma.ksp@karnataka.gov.in");
-  const [phoneNumber, setPhoneNumber] = useState("+91 94481 99042");
-  const [department, setDepartment] = useState("Crime Investigation Division (CID)");
-  const [policeStation, setPoliceStation] = useState("Indiranagar Police Station");
+  const { profile, updateProfile } = useProfileStore();
+
+  // Profile Information State (Sourced consistently from useProfileStore)
+  const [fullName, setFullName] = useState(profile.displayName);
+  const [badgeNumber, setBadgeNumber] = useState(profile.badgeNumber);
+  const [emailAddress, setEmailAddress] = useState(profile.email);
+  const [phoneNumber, setPhoneNumber] = useState(profile.phoneNumber);
+  const [department, setDepartment] = useState(profile.department);
+  const [policeStation, setPoliceStation] = useState(profile.station);
 
   // Interaction State
   const [isSaving, setIsSaving] = useState(false);

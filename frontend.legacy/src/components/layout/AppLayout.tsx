@@ -5,22 +5,19 @@ import { Topbar } from "./Topbar";
 import { CommandPalette } from "./CommandPalette";
 
 export function AppLayout() {
-  const [isPinned, setIsPinned] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans">
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation - Fixed 64px Rail */}
       <Sidebar
-        isPinned={isPinned}
-        onTogglePin={() => setIsPinned(!isPinned)}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      {/* Main Column */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+      {/* Main Column - Takes remaining width without overlap */}
+      <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
         {/* Top Header */}
         <Topbar
           onOpenMobileSidebar={() => setMobileOpen(true)}
@@ -29,7 +26,7 @@ export function AppLayout() {
 
         {/* Dynamic Content Viewport */}
         <main className="flex-1 overflow-y-auto bg-tactical-grid p-4 sm:p-6">
-          <div className="mx-auto max-w-7xl animate-fade-in">
+          <div className="mx-auto max-w-7xl animate-fade-in pb-10">
             <Outlet />
           </div>
         </main>

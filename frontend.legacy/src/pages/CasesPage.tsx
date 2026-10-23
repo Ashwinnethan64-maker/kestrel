@@ -52,6 +52,8 @@ import { Modal } from "@/components/ui/modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateView } from "@/components/ui/state-view";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 // Custom Leaflet marker for the Case Detail GIS preview
 const createCasePinIcon = (priority: string) => {
@@ -92,6 +94,7 @@ interface NewSuspectRecord {
 }
 
 export function CasesPage() {
+  const { t } = useTranslation();
   const { dataVersion } = useInvestigationContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [cases, setCases] = useState<FIRCase[]>([]);
@@ -250,13 +253,29 @@ export function CasesPage() {
     searchQuery,
   ]);
 
-  // Sorted dataset
+  // Sorted dataset with proper type comparison (dates, strings, counts)
   const sortedCases = useMemo(() => {
     return [...filteredCases].sort((a, b) => {
-      const aVal = a[sortField] ?? "";
-      const bVal = b[sortField] ?? "";
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      let aVal = a[sortField] ?? "";
+      let bVal = b[sortField] ?? "";
+
+      // Date comparison
+      if (sortField === "incidentDate" || sortField === "reportedDate") {
+        const timeA = new Date(aVal as string).getTime() || 0;
+        const timeB = new Date(bVal as string).getTime() || 0;
+        return sortOrder === "asc" ? timeA - timeB : timeB - timeA;
+      }
+
+      // Arrays (accused, evidence)
+      if (Array.isArray(aVal) && Array.isArray(bVal)) {
+        return sortOrder === "asc" ? aVal.length - bVal.length : bVal.length - aVal.length;
+      }
+
+      // String comparison
+      const strA = String(aVal).toLowerCase();
+      const strB = String(bVal).toLowerCase();
+      if (strA < strB) return sortOrder === "asc" ? -1 : 1;
+      if (strA > strB) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
   }, [filteredCases, sortField, sortOrder]);
@@ -1001,8 +1020,8 @@ export function CasesPage() {
     <div className="space-y-4">
       {/* 1. Page Header */}
       <PageHeader
-        title="Case Explorer"
-        subtitle="Search, filter, and drill down into FIR records. Open a case to review its timeline, entities, geographic information, and evidence."
+        title={t('cases.title')}
+        subtitle={t('cases.subtitle')}
         badge={
           <Badge variant="tactical" dot={true}>
             INTELLIGENCE RECORDS // STATUTORY LEDGER
@@ -1016,7 +1035,7 @@ export function CasesPage() {
             className="gap-1.5 font-mono text-xs"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>LOG NEW CASE</span>
+            <span>{t('cases.registerFir')}</span>
           </Button>
         }
       />
@@ -1040,7 +1059,7 @@ export function CasesPage() {
               <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search FIR number, officer, category, description, or legal section..."
+                placeholder={t('cases.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -1341,65 +1360,126 @@ export function CasesPage() {
                         )}
                         {visibleColumns.firNumber && (
                           <th
-                            className="px-3 py-3 cursor-pointer hover:text-foreground"
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
                             onClick={() => handleSort("firNumber")}
                           >
                             <div className="flex items-center gap-1">
-                              <span>FIR NUMBER</span>
-                              <ArrowUpDown className="h-3 w-3" />
+                              <span>{t('cases.firNo')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "firNumber" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "firNumber" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
                             </div>
                           </th>
                         )}
                         {visibleColumns.category && (
                           <th
-                            className="px-3 py-3 cursor-pointer hover:text-foreground"
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
                             onClick={() => handleSort("crimeCategory")}
                           >
                             <div className="flex items-center gap-1">
-                              <span>CATEGORY</span>
-                              <ArrowUpDown className="h-3 w-3" />
+                              <span>{t('cases.category')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "crimeCategory" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "crimeCategory" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
                             </div>
                           </th>
                         )}
                         {visibleColumns.district && (
                           <th
-                            className="px-3 py-3 cursor-pointer hover:text-foreground"
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
                             onClick={() => handleSort("district")}
                           >
                             <div className="flex items-center gap-1">
-                              <span>DISTRICT</span>
-                              <ArrowUpDown className="h-3 w-3" />
+                              <span>{t('cases.district')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "district" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "district" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
                             </div>
                           </th>
                         )}
                         {visibleColumns.station && (
                           <th
-                            className="px-3 py-3 cursor-pointer hover:text-foreground"
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
                             onClick={() => handleSort("policeStation")}
                           >
                             <div className="flex items-center gap-1">
-                              <span>STATION</span>
-                              <ArrowUpDown className="h-3 w-3" />
+                              <span>{t('cases.station')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "policeStation" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "policeStation" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
                             </div>
                           </th>
                         )}
                         {visibleColumns.date && (
                           <th
-                            className="px-3 py-3 cursor-pointer hover:text-foreground"
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
                             onClick={() => handleSort("incidentDate")}
                           >
                             <div className="flex items-center gap-1">
-                              <span>DATE</span>
-                              <ArrowUpDown className="h-3 w-3" />
+                              <span>{t('cases.date')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "incidentDate" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "incidentDate" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
                             </div>
                           </th>
                         )}
-                        {visibleColumns.status && <th className="px-3 py-3">STATUS</th>}
-                        {visibleColumns.priority && <th className="px-3 py-3">PRIORITY</th>}
-                        {visibleColumns.officer && <th className="px-3 py-3">INVESTIGATOR</th>}
-                        {visibleColumns.suspectsCount && <th className="px-3 py-3 text-center">ACCUSED</th>}
-                        {visibleColumns.victimsCount && <th className="px-3 py-3 text-center">VICTIMS</th>}
-                        {visibleColumns.actions && <th className="px-3 py-3 text-right">ACTION</th>}
+                        {visibleColumns.status && (
+                          <th
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
+                            onClick={() => handleSort("status")}
+                          >
+                            <div className="flex items-center gap-1">
+                              <span>{t('cases.status')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "status" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "status" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
+                            </div>
+                          </th>
+                        )}
+                        {visibleColumns.priority && (
+                          <th
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
+                            onClick={() => handleSort("priority")}
+                          >
+                            <div className="flex items-center gap-1">
+                              <span>{t('cases.priority')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "priority" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "priority" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
+                            </div>
+                          </th>
+                        )}
+                        {visibleColumns.officer && (
+                          <th
+                            className="px-3 py-3 cursor-pointer hover:text-foreground select-none"
+                            onClick={() => handleSort("investigatingOfficerName")}
+                          >
+                            <div className="flex items-center gap-1">
+                              <span>{t('cases.officer')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "investigatingOfficerName" ? "text-primary" : "text-muted-foreground/50")} />
+                              {sortField === "investigatingOfficerName" && (
+                                <span className="text-[9px] text-primary">{sortOrder === "asc" ? "▲" : "▼"}</span>
+                              )}
+                            </div>
+                          </th>
+                        )}
+                        {visibleColumns.suspectsCount && (
+                          <th className="px-3 py-3 text-center cursor-pointer hover:text-foreground select-none" onClick={() => handleSort("accusedIds")}>
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{t('cases.suspects')}</span>
+                              <ArrowUpDown className={cn("h-3 w-3", sortField === "accusedIds" ? "text-primary" : "text-muted-foreground/50")} />
+                            </div>
+                          </th>
+                        )}
+                        {visibleColumns.victimsCount && <th className="px-3 py-3 text-center">{t('cases.victims')}</th>}
+                        {visibleColumns.actions && <th className="px-3 py-3 text-right">{t('cases.actions')}</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
@@ -1524,27 +1604,31 @@ export function CasesPage() {
                 {/* Pagination Controls */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/40 text-xs font-mono text-muted-foreground">
                   <div>
-                    Showing <b className="text-foreground">{paginatedCases.length}</b> of{" "}
-                    <b className="text-foreground">{filteredCases.length}</b> records (Page{" "}
-                    {currentPage} of {totalPages})
+                    {t('cases.showing')} <b className="text-foreground">{paginatedCases.length}</b> {t('cases.of')}{" "}
+                    <b className="text-foreground">{filteredCases.length}</b> {t('cases.records')} ({t('cases.page')}{" "}
+                    {currentPage} {t('cases.of')} {totalPages})
                   </div>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={currentPage <= 1}
-                      onClick={() => setCurrentPage((p) => p - 1)}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       className="h-7 px-2"
+                      aria-label="Previous Page"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline ml-1 text-[11px]">{t('cases.prev')}</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage((p) => p + 1)}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       className="h-7 px-2"
+                      aria-label="Next Page"
                     >
+                      <span className="hidden sm:inline mr-1 text-[11px]">{t('cases.next')}</span>
                       <ChevronRight className="h-3.5 w-3.5" />
                     </Button>
                   </div>

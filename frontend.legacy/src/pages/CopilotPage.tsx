@@ -36,6 +36,8 @@ import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { apiClient } from "@/services/api/client";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { useTranslation } from "@/lib/i18n";
 import type { FIRCase, AccusedSuspect, CopilotPromptEnvelope } from "@kestrel/shared";
 
 interface ChatMessage {
@@ -152,11 +154,12 @@ export function CopilotPage() {
   );
 
   const { dataVersion } = useInvestigationContext();
+  const { language, setLanguage } = useLanguageStore();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>(activeThread?.messages || []);
   const [inputQuery, setInputQuery] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [language, setLanguage] = useState<"EN" | "KN">("EN");
 
   // Export Modal & Toast state
   const [showExportModal, setShowExportModal] = useState(false);
@@ -327,7 +330,7 @@ export function CopilotPage() {
     const contextEnv = useInvestigationContext.getState().getPromptContextEnvelope();
     const envelope: CopilotPromptEnvelope = {
       query: q,
-      language: language === "KN" ? "kn" : "en",
+      language: language === "kn" ? "kn" : "en",
       activeLens: contextEnv.activeLens || "dossier",
       focusedCaseId: caseIdParam || contextEnv.focusedCaseId || undefined,
       focusedSuspectId: contextEnv.focusedSuspectId || undefined,
@@ -596,8 +599,8 @@ export function CopilotPage() {
     <div className="space-y-4 font-mono text-xs">
       {/* Page Header */}
       <PageHeader
-        title="AI Investigator"
-        subtitle="Bilingual (English & Kannada) conversational crime-intelligence copilot grounded on verified FIR records, syndicate registries, and spatial telemetry."
+        title={t('copilot.title')}
+        subtitle={t('copilot.subtitle')}
         badge={
           <Badge variant="tactical" dot={true}>
             GROUNDED SYNDICATE ADAPTER // 60 CASES
@@ -608,11 +611,12 @@ export function CopilotPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setLanguage(language === "EN" ? "KN" : "EN")}
+              onClick={() => setLanguage(language === "en" ? "kn" : "en")}
               className="gap-1.5 font-mono text-xs"
+              title="Toggle Intelligence Language"
             >
               <span>LANG:</span>
-              <span className="font-bold text-primary">{language === "EN" ? "ENGLISH" : "ಕನ್ನಡ (KN)"}</span>
+              <span className="font-bold text-primary">{language === "en" ? "ENGLISH" : "ಕನ್ನಡ (KN)"}</span>
             </Button>
             <Button
               variant="outline"
@@ -621,7 +625,7 @@ export function CopilotPage() {
               className="gap-1.5 font-mono text-xs"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>EXPORT CONVERSATION</span>
+              <span>{t('copilot.export')}</span>
             </Button>
             <Button
               variant="tactical"
@@ -630,7 +634,7 @@ export function CopilotPage() {
               className="gap-1.5 font-mono text-xs"
             >
               <MessageSquarePlus className="h-3.5 w-3.5" />
-              <span>NEW CONVERSATION</span>
+              <span>{t('copilot.newSession')}</span>
             </Button>
           </div>
         }
@@ -843,7 +847,7 @@ export function CopilotPage() {
               >
                 <input
                   type="text"
-                  placeholder="Ask the investigation assistant about cases, entities, legal sections or geographic patterns…"
+                  placeholder={t('copilot.inputPlaceholder')}
                   value={inputQuery}
                   onChange={(e) => setInputQuery(e.target.value)}
                   disabled={isGenerating}
@@ -858,7 +862,7 @@ export function CopilotPage() {
                     className="gap-1.5 font-mono text-xs h-9 px-4 shrink-0 bg-red-600/90 hover:bg-red-600 text-white"
                   >
                     <Square className="h-3 w-3 fill-current" />
-                    <span>STOP</span>
+                    <span>{t('copilot.stopGenerating')}</span>
                   </Button>
                 ) : (
                   <Button
@@ -869,7 +873,7 @@ export function CopilotPage() {
                     className="gap-1.5 font-mono text-xs h-9 px-4 shrink-0"
                   >
                     <Send className="h-3.5 w-3.5" />
-                    <span>SEND</span>
+                    <span>{t('common.search')}</span>
                   </Button>
                 )}
               </form>

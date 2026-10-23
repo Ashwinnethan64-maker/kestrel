@@ -12,6 +12,7 @@ const CopilotPage = lazy(() => import("./pages/CopilotPage").then(m => ({ defaul
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage").then(m => ({ default: m.AnalyticsPage })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage").then(m => ({ default: m.ReportsPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const ProfilePage = lazy(() => import("./pages/ProfilePage").then(m => ({ default: m.ProfilePage })));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 function RouteLoadingFallback() {
@@ -87,6 +88,14 @@ export function App() {
             element={
               <Suspense fallback={<RouteLoadingFallback />}>
                 <ReportsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <Suspense fallback={<RouteLoadingFallback />}>
+                <ProfilePage />
               </Suspense>
             }
           />
