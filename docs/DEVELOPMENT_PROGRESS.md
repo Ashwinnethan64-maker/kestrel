@@ -38,5 +38,13 @@
     - Implemented `backend/src/db/seed.ts` supporting both Tier 1 Curated and Tier 2 Large Parametric dataset ingestion.
     - Successfully seeded 5 officers, 360 accused suspects, 1,507 FIR cases with WGS84 PostGIS geometry points (`ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)`), 2,656 co-accused junction links, and 8 evidence items.
     - Verified relational integrity, spatial distance calculation (`ST_Distance`), and GIN trigram text search.
+  - **Task 1.3B: Core REST API Gateway** (Complete — 2026-10-23):
+    - Upgraded `backend/src/routes/cases.ts` to live PostgreSQL with multi-parameter filtering, pagination (`page`, `limit`), GIN trigram text search, and joined case dossiers with accused suspects and evidence records.
+    - Upgraded `backend/src/routes/spatial.ts` with PostGIS `ST_Contains(ST_MakeEnvelope(...))` bounding box filtering and `ST_DWithin` radius search with geodesic distance sorting.
+    - Implemented `backend/src/routes/network.ts` with dynamic co-accused graph algorithm computing edge weights directly from `case_accused_junction`, plus focused ego-network extraction.
+    - Implemented `backend/src/routes/accused.ts` for suspect dossier lookups and linked case rosters.
+    - Implemented `backend/src/routes/analytics.ts` for real-time KPI metrics and station clearance rates.
+    - Verified all endpoints via live HTTP integration tests against `http://localhost:3000`.
+
 
 
