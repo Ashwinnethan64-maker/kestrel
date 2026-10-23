@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MarkerType,
@@ -219,31 +220,33 @@ export const ZonalSyndicateCanvas: React.FC<ZonalSyndicateCanvasProps> = ({
   }, [syndicates, suspects, activeSyndicateFilter, onSelectSyndicate]);
 
   return (
-    <div className="relative w-full h-[calc(100vh-140px)] bg-[#050b14] overflow-hidden">
-      {/* Topology Canvas HUD */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-3 bg-[#0a1120]/90 backdrop-blur-md border border-purple-900/60 rounded-lg px-4 py-2 text-xs shadow-2xl">
-        <div className="flex items-center gap-2 text-purple-400 font-mono font-medium">
-          <Network className="w-4 h-4 text-purple-400" />
-          <span>INTER-STATION SYNDICATE TOPOLOGY:</span>
+    <ReactFlowProvider>
+      <div className="relative w-full h-[calc(100vh-140px)] bg-[#050b14] overflow-hidden">
+        {/* Topology Canvas HUD */}
+        <div className="absolute top-4 left-4 z-10 flex items-center gap-3 bg-[#0a1120]/90 backdrop-blur-md border border-purple-900/60 rounded-lg px-4 py-2 text-xs shadow-2xl">
+          <div className="flex items-center gap-2 text-purple-400 font-mono font-medium">
+            <Network className="w-4 h-4 text-purple-400" />
+            <span>INTER-STATION SYNDICATE TOPOLOGY:</span>
+          </div>
+          <span className="text-white font-mono">{syndicates.length} Cross-Station Rings</span>
+          <div className="w-px h-3 bg-purple-800" />
+          <span className="text-slate-400 font-mono">
+            Click any syndicate ring to filter the Zonal Heatmap
+          </span>
         </div>
-        <span className="text-white font-mono">{syndicates.length} Cross-Station Rings</span>
-        <div className="w-px h-3 bg-purple-800" />
-        <span className="text-slate-400 font-mono">
-          Click any syndicate ring to filter the Zonal Heatmap
-        </span>
-      </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        colorMode="dark"
-        className="bg-[#050b14]"
-      >
-        <Background color="#1e1838" gap={25} size={1} />
-        <Controls className="!bg-[#0a1120] !border-purple-900/60 !fill-purple-400 [&>button]:!border-purple-900/60" />
-      </ReactFlow>
-    </div>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          colorMode="dark"
+          className="bg-[#050b14]"
+        >
+          <Background color="#1e1838" gap={25} size={1} />
+          <Controls className="!bg-[#0a1120] !border-purple-900/60 !fill-purple-400 [&>button]:!border-purple-900/60" />
+        </ReactFlow>
+      </div>
+    </ReactFlowProvider>
   );
 };

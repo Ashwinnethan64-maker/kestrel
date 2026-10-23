@@ -1,14 +1,15 @@
-import type {
-  ApiResponse,
-  FIRCase,
-  AccusedSuspect,
-  CaseEvidence,
-  InvestigativeTask,
-  OfficerWithWorkload,
-  CopilotPromptEnvelope,
-  CopilotResponseChunk,
-  CaseFilterParams,
-  TaskStatus
+import {
+  type ApiResponse,
+  type FIRCase,
+  type AccusedSuspect,
+  type CaseEvidence,
+  type InvestigativeTask,
+  type OfficerWithWorkload,
+  type CopilotPromptEnvelope,
+  type CopilotResponseChunk,
+  type CaseFilterParams,
+  type TaskStatus,
+  curatedCrimeDataset
 } from '@kestrel/shared';
 
 const BASE = '/api';
@@ -109,7 +110,7 @@ export const liveClient = {
   /** GET /api/syndicates — cross-station criminal rings */
   getSyndicates: (): Promise<any[]> =>
     apiFetch<any[]>('/syndicates').catch(() =>
-      import('@kestrel/shared').then((m) => (m.curatedCrimeDataset as any).syndicates || [])
+      Promise.resolve((curatedCrimeDataset as any).syndicates || [])
     ),
 
   /**

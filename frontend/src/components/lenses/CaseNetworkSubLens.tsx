@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MarkerType,
@@ -248,17 +249,19 @@ export const CaseNetworkSubLens: React.FC<CaseNetworkSubLensProps> = ({ firCase,
         <span className="text-purple-400 font-mono">Click any suspect node to open Dossier</span>
       </div>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        colorMode="dark"
-        className="bg-[#050b14]"
-      >
-        <Background color="#1e293b" gap={20} size={1} />
-        <Controls className="!bg-[#0a1120] !border-cyan-900/60 !fill-cyan-400 [&>button]:!border-cyan-900/60" />
-      </ReactFlow>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          colorMode="dark"
+          className="bg-[#050b14]"
+        >
+          <Background color="#1e293b" gap={20} size={1} />
+          <Controls className="!bg-[#0a1120] !border-cyan-900/60 !fill-cyan-400 [&>button]:!border-cyan-900/60" />
+        </ReactFlow>
+      </ReactFlowProvider>
     </div>
   );
 };
