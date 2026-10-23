@@ -1,248 +1,303 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
-  FolderGit2,
-  Share2,
-  MapPin,
-  Sparkles,
-  ShieldAlert,
-  ArrowUpRight,
   Activity,
-  Layers,
+  ShieldAlert,
   Radio,
   Clock,
+  Sparkles,
+  MapPin,
+  FolderGit2,
+  Share2,
+  Download,
+  CheckCircle,
 } from "lucide-react";
 import { apiClient } from "@/services/api/client";
-import { FIRCase } from "@kestrel/shared";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { FIRCase, AccusedSuspect } from "@kestrel/shared";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { StatusIndicator } from "@/components/ui/status-indicator";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StateView } from "@/components/ui/state-view";
+
+// Reusable Dashboard Components
+import { KPIStatCard } from "@/components/dashboard/KPIStatCard";
+import { DashboardFilterBar, DashboardFilterState } from "@/components/dashboard/DashboardFilterBar";
+import { CrimeTrendChart } from "@/components/dashboard/CrimeTrendChart";
+import { GeoIntelPanel } from "@/components/dashboard/GeoIntelPanel";
+import { AskKestrelPanel } from "@/components/dashboard/AskKestrelPanel";
+import { EntityNetworkPreview } from "@/components/dashboard/EntityNetworkPreview";
+import { RecentRecordsTable } from "@/components/dashboard/RecentRecordsTable";
 
 export function OverviewPage() {
-  const [cases, setCases] = useState<FIRCase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allCases, setAllCases] = useState<FIRCase[]>([]);
+  const [allSuspects, setAllSuspects] = useState<AccusedSuspect[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [exportNotice, setExportNotice] = useState<boolean>(false);
+
+  // Filter State
+  const [filterState, setFilterState] = useState<DashboardFilterState>({
+    dateRange: "all",
+    policeStation: "all",
+    category: "all",
+    priority: "all",
+    searchQuery: "",
+  });
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [casesRes, suspectsRes] = await Promise.all([
+        apiClient.getCases(),
+        apiClient.getAccused(),
+      ]);
+      setAllCases(casesRes.data);
+      setAllSuspects(suspectsRes.data);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load tactical telemetry stream.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    apiClient.getCases().then((res) => {
-      setCases(res.data);
-      setLoading(false);
-    });
+    fetchData();
   }, []);
 
-  const criticalCount = cases.filter((c) => c.priority === "Critical").length;
-  const underInvestigationCount = cases.filter(
+  // Compute Available Stations & Categories dynamically
+  const availableStations = useMemo(() => {
+    return Array.from(new Set(allCases.map((c) => c.policeStation))).sort();
+  }, [allCases]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(allCases.map((c) => c.crimeCategory))).sort();
+  }, [allCases]);
+
+  // Apply Filters Client-side
+  const filteredCases = useMemo(() => {
+    return allCases.filter((c) => {
+      // Station filter
+      if (
+        filterState.policeStation !== "all" &&
+        c.policeStation.toLowerCase() !== filterState.policeStation.toLowerCase()
+      ) {
+        return false;
+      }
+
+      // Category filter
+      if (
+        filterState.category !== "all" &&
+        c.crimeCategory.toLowerCase() !== filterState.category.toLowerCase()
+      ) {
+        return false;
+      }
+
+      // Priority filter
+      if (
+        filterState.priority !== "all" &&
+        c.priority !== filterState.priority
+      ) {
+        return false;
+      }
+
+      // Date Range filter (simulation based on days from reference)
+      if (filterState.dateRange !== "all") {
+        const incidentTime = new Date(c.incidentDate).getTime();
+        const now = new Date("2024-10-23T12:00:00Z").getTime(); // fixed demo reference point
+        const diffHours = (now - incidentTime) / (1000 * 60 * 60);
+
+        if (filterState.dateRange === "24h" && diffHours > 48) return false;
+        if (filterState.dateRange === "7d" && diffHours > 7 * 24) return false;
+        if (filterState.dateRange === "30d" && diffHours > 30 * 24) return false;
+      }
+
+      // Search Query
+      if (filterState.searchQuery.trim()) {
+        const q = filterState.searchQuery.toLowerCase();
+        return (
+          c.firNumber.toLowerCase().includes(q) ||
+          c.description.toLowerCase().includes(q) ||
+          c.applicableActs.some((a) => a.toLowerCase().includes(q))
+        );
+      }
+
+      return true;
+    });
+  }, [allCases, filterState]);
+
+  // KPI Calculations
+  const totalRecords = filteredCases.length;
+  const casesUnderReview = filteredCases.filter(
     (c) => c.status === "Under Investigation"
   ).length;
+  const criticalCases = filteredCases.filter((c) => c.priority === "Critical").length;
+  const activeHotspotCount = useMemo(() => {
+    return new Set(filteredCases.map((c) => c.policeStation)).size;
+  }, [filteredCases]);
+
+  // Handlers
+  const handleFilterChange = (updated: Partial<DashboardFilterState>) => {
+    setFilterState((prev) => ({ ...prev, ...updated }));
+  };
+
+  const handleExportBriefing = () => {
+    setExportNotice(true);
+    setTimeout(() => setExportNotice(false), 3000);
+  };
 
   return (
     <div className="space-y-6">
+      {/* 1. Page Header */}
       <PageHeader
-        title="Tactical Operations Overview"
-        subtitle="Bengaluru Metropolitan Police Command & Control Grid. Real-time incident telemetry, predictive pattern detection, and unified case dossiers."
+        title="Intelligence Overview"
+        subtitle="Explore patterns, relationships and geographic insights across the available records."
         badge={
           <Badge variant="tactical" dot={true}>
-            SYSTEM OPERATIONAL
+            SYNTHETIC TELEMETRY // DEMO
           </Badge>
         }
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportBriefing}
+              className="gap-1.5 font-mono text-xs"
+            >
+              {exportNotice ? (
+                <>
+                  <CheckCircle className="h-3.5 w-3.5 text-positive" />
+                  <span>BRIEFING COMPILED</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-3.5 w-3.5" />
+                  <span>EXPORT BRIEF</span>
+                </>
+              )}
+            </Button>
             <Link to="/copilot">
-              <Button variant="tactical" size="sm" className="gap-1.5 font-mono">
-                <Sparkles className="h-3.5 w-3.5" /> AI COPILOT
-              </Button>
-            </Link>
-            <Link to="/cases">
-              <Button variant="default" size="sm" className="gap-1.5 font-mono">
-                <FolderGit2 className="h-3.5 w-3.5" /> EXPLORE CASES
+              <Button variant="tactical" size="sm" className="gap-1.5 font-mono text-xs">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>ASK KESTREL</span>
               </Button>
             </Link>
           </div>
         }
       />
 
-      {/* Bento Grid KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card glow="teal" className="bg-card/90">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground flex items-center justify-between">
-              <span>Active Incident Records</span>
-              <Activity className="h-4 w-4 text-primary" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-foreground">
-              {loading ? "..." : cases.length}
-            </div>
-            <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground font-mono">
-              <span className="text-positive font-semibold">↑ +14.2%</span> vs last 30d
-            </div>
-          </CardContent>
-        </Card>
+      {/* 2. Responsive Dashboard Operational Filter Bar */}
+      <DashboardFilterBar
+        filters={filterState}
+        onChange={handleFilterChange}
+        onRefresh={fetchData}
+        availableStations={availableStations}
+        availableCategories={availableCategories}
+        totalMatches={totalRecords}
+      />
 
-        <Card glow="red" className="bg-card/90">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground flex items-center justify-between">
-              <span>Critical Severity FIRs</span>
-              <ShieldAlert className="h-4 w-4 text-destructive" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-destructive">
-              {loading ? "..." : criticalCount}
-            </div>
-            <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground font-mono">
-              <span>Requires immediate deployment</span>
-            </div>
-          </CardContent>
-        </Card>
+      {/* 3. Error or Loading Handling */}
+      {error && (
+        <StateView
+          variant="error"
+          title="Telemetry Bus Failure"
+          description={error}
+          actionLabel="Retry Connection"
+          onAction={fetchData}
+        />
+      )}
 
-        <Card glow="blue" className="bg-card/90">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground flex items-center justify-between">
-              <span>Under Active Investigation</span>
-              <Radio className="h-4 w-4 text-secondary" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-foreground">
-              {loading ? "..." : underInvestigationCount}
-            </div>
-            <div className="flex items-center gap-2 mt-1 text-[11px] text-secondary font-mono">
-              <span>6 station divisions assigned</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/90">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground flex items-center justify-between">
-              <span>Mean Resolution Velocity</span>
-              <Clock className="h-4 w-4 text-attention" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono text-foreground">
-              4.8 Days
-            </div>
-            <div className="flex items-center gap-2 mt-1 text-[11px] text-positive font-mono">
-              <span>-18% lead time reduction</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Multi-lens Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link to="/cases" className="group">
-          <Card className="h-full hover:border-primary/50 transition-all hover:bg-surface-elevated/40">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-foreground group-hover:text-primary transition-colors">
-                  <FolderGit2 className="h-4 w-4 text-primary" /> Case & FIR Explorer
-                </span>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Full-spectrum FIR ledger, statutory IPC/BNS act mapper, evidence chain of custody, and accused suspect registry.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/network" className="group">
-          <Card className="h-full hover:border-secondary/50 transition-all hover:bg-surface-elevated/40">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-foreground group-hover:text-secondary transition-colors">
-                  <Share2 className="h-4 w-4 text-secondary" /> Criminal Syndicate Graph
-                </span>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-secondary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Relational entity topology, co-accused network clustering, repeat offender bridges, and automated threat hierarchy explainability.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/gis" className="group">
-          <Card className="h-full hover:border-primary/50 transition-all hover:bg-surface-elevated/40">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-foreground group-hover:text-primary transition-colors">
-                  <MapPin className="h-4 w-4 text-primary" /> Geospatial GIS Map
-                </span>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Tactical crime density heatmaps, spatial lasso query tool, high-risk patrol routing, and district perimeter analytics.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      {/* Recent Incidents Table Preview */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Recent Priority Incidents</CardTitle>
-            <p className="text-xs text-muted-foreground font-sans mt-1">
-              Live chronological feed of reported First Information Reports across Bengaluru stations.
-            </p>
+      {loading ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
           </div>
-          <Link to="/cases">
-            <Button variant="outline" size="sm" className="font-mono text-xs">
-              View All ({cases.length})
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs font-mono text-left">
-              <thead className="bg-surface-elevated/80 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border">
-                <tr>
-                  <th className="px-4 py-2.5">FIR Number</th>
-                  <th className="px-4 py-2.5">Category</th>
-                  <th className="px-4 py-2.5">Police Station</th>
-                  <th className="px-4 py-2.5">Priority</th>
-                  <th className="px-4 py-2.5">Status</th>
-                  <th className="px-4 py-2.5 text-right">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {cases.slice(0, 5).map((c) => (
-                  <tr key={c.id} className="hover:bg-surface-elevated/40 transition-colors">
-                    <td className="px-4 py-3 font-bold text-primary">{c.firNumber}</td>
-                    <td className="px-4 py-3 text-foreground">{c.crimeCategory}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.policeStation}</td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        variant={c.priority === "Critical" ? "destructive" : "attention"}
-                        dot={true}
-                      >
-                        {c.priority}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.status}</td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">
-                      {new Date(c.incidentDate).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Skeleton className="h-80 lg:col-span-2" />
+            <Skeleton className="h-80" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      ) : (
+        <>
+          {/* 4. Four Primary KPI Metric Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KPIStatCard
+              title="Total Records"
+              value={totalRecords}
+              description="Chronologically indexed FIRs"
+              trend={{ value: "+14.2%", isPositive: true }}
+              icon={<Activity className="h-4 w-4 text-primary" />}
+              glow="teal"
+              targetRoute="/cases"
+            />
+            <KPIStatCard
+              title="Cases Under Review"
+              value={casesUnderReview}
+              description="Active station inquiries"
+              trend={{ value: "-6.1%", isPositive: true }}
+              icon={<Radio className="h-4 w-4 text-secondary" />}
+              glow="blue"
+              targetRoute="/cases"
+            />
+            <KPIStatCard
+              title="Linked Entities"
+              value={allSuspects.length}
+              description="Accused & syndicate nodes"
+              trend={{ value: "3 Gangs", isNeutral: true }}
+              icon={<Share2 className="h-4 w-4 text-primary" />}
+              targetRoute="/network"
+            />
+            <KPIStatCard
+              title="Geographic Hotspots"
+              value={activeHotspotCount}
+              description="High-density station clusters"
+              trend={{ value: `${criticalCases} Critical`, isPositive: criticalCases === 0 ? true : false }}
+              icon={<MapPin className="h-4 w-4 text-destructive" />}
+              glow={criticalCases > 0 ? "red" : "none"}
+              targetRoute="/gis"
+            />
+          </div>
+
+          {/* 5. Asymmetric Swiss Bento Layout Workspace */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Main Trend & Velocity Chart (7 cols) */}
+            <div className="lg:col-span-7">
+              <CrimeTrendChart cases={filteredCases} />
+            </div>
+
+            {/* Geographic Intelligence Panel (5 cols) */}
+            <div className="lg:col-span-5">
+              <GeoIntelPanel cases={filteredCases} />
+            </div>
+
+            {/* "Ask Kestrel" Conversational Copilot Entry Point (6 cols) */}
+            <div className="lg:col-span-6">
+              <AskKestrelPanel
+                onExecuteQuery={(q) => {
+                  if (q.includes("Indiranagar")) {
+                    handleFilterChange({ policeStation: "Indiranagar" });
+                  }
+                }}
+              />
+            </div>
+
+            {/* Entity-Relationship Network Preview (6 cols) */}
+            <div className="lg:col-span-6">
+              <EntityNetworkPreview />
+            </div>
+
+            {/* Full-width Recent Records & Priority Incident Table (12 cols) */}
+            <div className="lg:col-span-12">
+              <RecentRecordsTable cases={filteredCases} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
