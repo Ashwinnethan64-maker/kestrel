@@ -88,9 +88,9 @@ The new frontend rebuild unifies the platform into a **Single-Surface Tactical C
 ### Phase 1: Tactical Command Deck Core Shell & Central State Engine
 *Priority: Critical | Goal: High-contrast military SOC application frame with seamless persona switching.*
 
-- [ ] **Task 1.1: Master Command Deck Zustand Store (`useCommandDeckStore.ts`)**
-  - [ ] **Sub-task 1.1.1**: Create `frontend/src/store/useCommandDeckStore.ts` with typed state (`altitude`, `activeOfficerId`, `activeStation`, `lensMode`, `caseSubLens`, `activeCaseId`, `activeSuspectId`, `activeBoundingBox`, `timeline`, `pinnedItemIds`, `isOfflineMode`, `backendStatus`).
-  - [ ] **Sub-task 1.1.2**: Implement store transition actions (`openCaseNexus`, `closeCaseNexus`, `setAltitude`, `setCaseSubLens`, `pinItem`, `unpinItem`, `setOfflineMode`, `getPromptContextEnvelope`).
+- [x] **Task 1.1: Master Command Deck Zustand Store (`useCommandDeckStore.ts`)**
+  - [x] **Sub-task 1.1.1**: Create `frontend/src/store/useCommandDeckStore.ts` with typed state (`altitude`, `activeOfficerId`, `activeStation`, `lensMode`, `caseSubLens`, `activeCaseId`, `activeSuspectId`, `activeBoundingBox`, `timeline`, `pinnedItemIds`, `isOfflineMode`, `backendStatus`).
+  - [x] **Sub-task 1.1.2**: Implement store transition actions (`openCaseNexus`, `closeCaseNexus`, `setAltitude`, `setCaseSubLens`, `pinItem`, `unpinItem`, `setOfflineMode`, `getPromptContextEnvelope`).
 
 - [ ] **Task 1.2: Dual-Mode API Services Layer**
   - [ ] **Sub-task 1.2.1**: Implement `frontend/src/services/api/client.ts` with typed REST client and streaming fetch reader for Groq Server-Sent Events (`POST /api/copilot/query`).
