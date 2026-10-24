@@ -123,4 +123,121 @@ export interface CrimeSurgeResponse {
   anchorDate: string;
 }
 
+// ----------------------------------------------------------------------------
+// Dedicated Groq Intelligence Analysis Interfaces
+// ----------------------------------------------------------------------------
+
+export interface NetworkAIAnalysisRequest {
+  language: 'en' | 'kn';
+  nodesCount: number;
+  edgesCount: number;
+  activeFilters?: {
+    entityType?: string;
+    riskLevel?: string;
+    searchQuery?: string;
+  };
+  sampleNodes: Array<{
+    id: string;
+    label: string;
+    type: string;
+    risk?: string;
+    connectionsCount: number;
+    connectedTo?: string[];
+  }>;
+  sampleEdges: Array<{
+    source: string;
+    target: string;
+    label?: string;
+    relationType?: string;
+  }>;
+}
+
+export interface NetworkAIAnalysisResponse {
+  executiveSummary: string;
+  networkTopology: string;
+  keyEntities: Array<{
+    id: string;
+    name: string;
+    role: string;
+    rationale: string;
+  }>;
+  detectedSyndicates: Array<{
+    name: string;
+    members: string[];
+    modusOperandi: string;
+  }>;
+  investigativeLeads: string[];
+  dataLimitations: string[];
+  disclaimer: string;
+}
+
+export interface MapAIAnalysisRequest {
+  language: 'en' | 'kn';
+  selectedRegion?: string;
+  activeFilters?: {
+    district?: string;
+    category?: string;
+    priority?: string;
+    status?: string;
+    dateRange?: [string, string];
+  };
+  totalIncidents: number;
+  categoryBreakdown: Record<string, number>;
+  priorityBreakdown: Record<string, number>;
+  stationBreakdown: Record<string, number>;
+  sampleIncidents: Array<{
+    firNumber: string;
+    category: string;
+    policeStation: string;
+    priority: string;
+    date: string;
+    lat: number;
+    lng: number;
+  }>;
+}
+
+export interface MapAIAnalysisResponse {
+  summary: string;
+  hotspotClusters: Array<{
+    area: string;
+    dominantCategory: string;
+    incidentCount: number;
+    tacticalAssessment: string;
+  }>;
+  temporalPatterns: string;
+  investigativeDirectives: string[];
+  dataLimitations: string[];
+  disclaimer: string;
+}
+
+export interface AnalyticsAIAnalysisRequest {
+  language: 'en' | 'kn';
+  timeframe?: string;
+  activeFilters?: {
+    district?: string;
+    category?: string;
+    priority?: string;
+    status?: string;
+  };
+  metrics: {
+    totalFIRs: number;
+    criticalCount: number;
+    clearanceRatePercent: number;
+    categoryDistribution: Record<string, number>;
+    stationDistribution: Record<string, number>;
+    temporalSlots?: Record<string, number>;
+  };
+}
+
+export interface AnalyticsAIAnalysisResponse {
+  executiveSummary: string;
+  keyObservedTrends: string[];
+  categoryJurisdictionComparisons: string[];
+  potentialExplanations: string[];
+  investigativeQuestions: string[];
+  dataLimitations: string[];
+  disclaimer: string;
+}
+
+
 

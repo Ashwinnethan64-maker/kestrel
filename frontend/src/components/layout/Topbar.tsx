@@ -47,6 +47,7 @@ export function Topbar({
   const [isRetryingLive, setIsRetryingLive] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [liveAlerts, setLiveAlerts] = useState<any[]>([]);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -57,7 +58,18 @@ export function Topbar({
     backendStatus,
     setBackendStatus,
     triggerDataRefresh,
+    dataVersion,
   } = useInvestigationContext();
+
+  // Load real-time alerts from live cases
+  useEffect(() => {
+    apiClient.getCases({ limit: 10 }).then((res) => {
+      const critical = (res.data || []).filter(
+        (c) => c.priority === "Critical" || c.priority === "High"
+      );
+      setLiveAlerts(critical.slice(0, 4));
+    }).catch(() => {});
+  }, [dataVersion]);
 
   // Close menus on outside click or Escape key
   useEffect(() => {
@@ -247,26 +259,55 @@ export function Topbar({
 
           {/* Notifications Dropdown Panel */}
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 rounded-md border border-border bg-card p-3 shadow-2xl z-50 animate-fade-in font-mono text-xs">
+            <div className="absolute right-0 mt-2 w-84 rounded-md border border-border bg-card p-3 shadow-2xl z-50 animate-fade-in font-mono text-xs">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
                 <span className="font-semibold text-foreground text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                   <ShieldAlert className="h-3.5 w-3.5 text-destructive" /> {t('topbar.alerts')}
                 </span>
-                <span className="text-[10px] text-muted-foreground">{t('topbar.newAlerts')}</span>
+                <span className="text-[10px] text-primary font-bold">
+                  {liveAlerts.length} {language === "kn" ? "ಹೊಸತು" : "NEW"}
+                </span>
               </div>
-              <div className="space-y-2">
-                <div className="rounded border border-destructive/30 bg-destructive/10 p-2 text-[11px]">
-                  <div className="text-destructive font-bold mb-0.5">PRIORITY 1 // BURGLARY SURGE</div>
-                  <div className="text-muted-foreground font-sans text-xs">
-                    3 incidents flagged in Indiranagar within 48h. Latch match found.
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {liveAlerts.length === 0 ? (
+                  <div className="p-3 text-center text-muted-foreground text-[11px]">
+                    {language === "kn" ? "ಯಾವುದೇ ಹೊಸ ಎಚ್ಚರಿಕೆಗಳಿಲ್ಲ" : "No active critical alerts."}
                   </div>
-                </div>
-                <div className="rounded border border-attention/30 bg-attention/10 p-2 text-[11px]">
-                  <div className="text-attention font-bold mb-0.5">ALERT // SUSPECT PROXIMITY</div>
-                  <div className="text-muted-foreground font-sans text-xs">
-                    Vehicle KA-04-E-1234 flagged at Hebbal toll checkpoint.
-                  </div>
-                </div>
+                ) : (
+                  liveAlerts.map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setNotificationsOpen(false);
+                        navigate(`/cases?caseId=${c.id}`);
+                      }}
+                      className={cn(
+                        "rounded border p-2 text-[11px] cursor-pointer transition-colors hover:brightness-110",
+                        c.priority === "Critical"
+                          ? "border-destructive/30 bg-destructive/10 hover:border-destructive/60"
+                          : "border-attention/30 bg-attention/10 hover:border-attention/60"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-0.5">
+                        <span className={cn(
+                          "font-bold text-[10px] uppercase truncate",
+                          c.priority === "Critical" ? "text-destructive" : "text-attention"
+                        )}>
+                          {c.priority} // {c.crimeCategory}
+                        </span>
+                        <span className="text-[9px] text-primary underline shrink-0 font-mono">
+                          {c.firNumber}
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground font-sans text-xs line-clamp-2">
+                        {language === "kn" && c.descriptionKannada ? c.descriptionKannada : c.description}
+                      </div>
+                      <div className="text-[9px] text-muted-foreground/80 mt-1 font-mono">
+                        {c.policeStation} • {c.district}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

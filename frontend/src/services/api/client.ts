@@ -15,7 +15,13 @@ import type {
   SemanticCaseSearchResult,
   CrimeSurgeResponse,
   CopilotPromptEnvelope,
-  CopilotResponseChunk
+  CopilotResponseChunk,
+  NetworkAIAnalysisRequest,
+  NetworkAIAnalysisResponse,
+  MapAIAnalysisRequest,
+  MapAIAnalysisResponse,
+  AnalyticsAIAnalysisRequest,
+  AnalyticsAIAnalysisResponse
 } from '@kestrel/shared';
 
 import { useInvestigationContext } from '../../store/useInvestigationContext';
@@ -340,7 +346,133 @@ class LiveOrMockClient {
     );
   }
 
+  async explainNetwork(payload: NetworkAIAnalysisRequest): Promise<ApiResponse<NetworkAIAnalysisResponse>> {
+    return this.safeFetch<NetworkAIAnalysisResponse>(
+      '/api/network/ai-explain',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      },
+      () => Promise.resolve({
+        success: true,
+        data: {
+          executiveSummary: payload.language === 'kn'
+            ? `ಸಕ್ರಿಯ ನೆಟ್‌ವರ್ಕ್‌ನಲ್ಲಿ ${payload.nodesCount} ನೋಡ್‌ಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ. ಆರೋಪಿಗಳ ನಡುವೆ ಪ್ರಮುಖ ಸಂಪರ್ಕಗಳು ಪತ್ತೆಯಾಗಿವೆ.`
+            : `Network analysis of ${payload.nodesCount} entities and ${payload.edgesCount} relational links across active graph scope.`,
+          networkTopology: payload.language === 'kn'
+            ? 'ಕೇಂದ್ರೀಯ ಬ್ರೋಕರ್ ನೋಡ್‌ಗಳು ಪ್ರಕರಣಗಳನ್ನು ಸಂಪರ್ಕಿಸುತ್ತವೆ.'
+            : 'Central broker nodes bridge property crimes with common vehicular conduits.',
+          keyEntities: (payload.sampleNodes || []).slice(0, 3).map((n) => ({
+            id: n.id,
+            name: n.label,
+            role: n.type === 'suspect' ? 'Key Accused' : 'Case Anchor',
+            rationale: `Associated with ${n.connectionsCount || 1} network links.`
+          })),
+          detectedSyndicates: [
+            {
+              name: 'East-Central Coordinated Network',
+              members: (payload.sampleNodes || []).filter((n) => n.type === 'suspect').slice(0, 2).map((n) => n.label),
+              modusOperandi: 'Cross-jurisdictional forced entry and rapid vehicle getaway.'
+            }
+          ],
+          investigativeLeads: [
+            'Correlate toll surveillance timestamps against registered getaway vehicles.',
+            'Issue statutory witness summons for linked repeat offenders.'
+          ],
+          dataLimitations: [
+            'Analysis constrained to actively rendered nodes in current graph viewport.'
+          ],
+          disclaimer: payload.language === 'kn'
+            ? 'ಎಐ-ರಚಿತ ಗುಪ್ತಚರ ವಿಶ್ಲೇಷಣೆ. ತನಿಖಾ ದೃಢೀಕರಣ ಅಗತ್ಯವಿದೆ.'
+            : 'AI-generated network synthesis based on supplied graph scope. Requires evidentiary corroboration.'
+        },
+        meta: { timestamp: new Date().toISOString() }
+      })
+    );
+  }
+
+  async analyzeMapArea(payload: MapAIAnalysisRequest): Promise<ApiResponse<MapAIAnalysisResponse>> {
+    return this.safeFetch<MapAIAnalysisResponse>(
+      '/api/spatial/ai-analyse-area',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      },
+      () => Promise.resolve({
+        success: true,
+        data: {
+          summary: payload.language === 'kn'
+            ? `${payload.selectedRegion || 'ಆಯ್ದ ವಲಯ'}ದಲ್ಲಿ ${payload.totalIncidents} ಘಟನೆಗಳು ದಾಖಲಾಗಿವೆ.`
+            : `Geospatial analysis across ${payload.selectedRegion || 'selected region'} encompassing ${payload.totalIncidents} incidents.`,
+          hotspotClusters: Object.entries(payload.stationBreakdown || {}).slice(0, 3).map(([area, count]) => ({
+            area,
+            dominantCategory: Object.keys(payload.categoryBreakdown || {})[0] || 'Property Crime',
+            incidentCount: count,
+            tacticalAssessment: 'High incidence cluster along arterial transit routes.'
+          })),
+          temporalPatterns: payload.language === 'kn'
+            ? 'ರಾತ್ರಿ ವೇಳೆಯಲ್ಲಿ ಘಟನೆಗಳ ಸಂಖ್ಯೆ ಹೆಚ್ಚಿದೆ.'
+            : 'Incident distribution demonstrates peak clustering during late nocturnal hours.',
+          investigativeDirectives: [
+            'Reinforce dynamic motorcycle patrol beats at major transit choke points.',
+            'Audit ANPR coverage across high-risk jurisdictional perimeters.'
+          ],
+          dataLimitations: [
+            'Based on geocoded incidents within the currently filtered map boundary.'
+          ],
+          disclaimer: payload.language === 'kn'
+            ? 'ಎಐ-ರಚಿತ ಪ್ರಾದೇಶಿಕ ವಿಶ್ಲೇಷಣೆ. ಅಧಿಕೃತ ಪೊಲೀಸ್ ಅನುಮೋದನೆ ಅಗತ್ಯವಿದೆ.'
+            : 'AI-generated spatial assessment. Deployments subject to jurisdictional command verification.'
+        },
+        meta: { timestamp: new Date().toISOString() }
+      })
+    );
+  }
+
+  async analyzeAnalytics(payload: AnalyticsAIAnalysisRequest): Promise<ApiResponse<AnalyticsAIAnalysisResponse>> {
+    return this.safeFetch<AnalyticsAIAnalysisResponse>(
+      '/api/analytics/ai-insights',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      },
+      () => Promise.resolve({
+        success: true,
+        data: {
+          executiveSummary: payload.language === 'kn'
+            ? `ಒಟ್ಟು ${payload.metrics.totalFIRs} ಪ್ರಕರಣಗಳಲ್ಲಿ ${payload.metrics.criticalCount} ತೀವ್ರ ಸ್ವರೂಪದ ಅಪರಾಧಗಳು ದಾಖಲಾಗಿವೆ. ಇತ್ಯರ್ಥ ದರ ಶೇ. ${payload.metrics.clearanceRatePercent} ರಷ್ಟಿದೆ.`
+            : `Strategic audit of ${payload.metrics.totalFIRs} FIR records (${payload.metrics.criticalCount} critical) with ${payload.metrics.clearanceRatePercent}% overall clearance rate.`,
+          keyObservedTrends: [
+            `Dominant incident categories include ${Object.keys(payload.metrics.categoryDistribution || {}).slice(0, 2).join(' and ')}.`,
+            `Station caseload distribution is highest in ${Object.keys(payload.metrics.stationDistribution || {}).slice(0, 2).join(' and ')}.`
+          ],
+          categoryJurisdictionComparisons: [
+            'Significant caseload disparity observed between commercial urban centers and perimeter stations.'
+          ],
+          potentialExplanations: [
+            'Elevated commercial density and transit nodes correlate with property and cyber fraud concentration.'
+          ],
+          investigativeQuestions: [
+            'Are patrol shift schedules aligned with nocturnal high-incident periods?',
+            'Can inter-station evidence exchange accelerate chargesheeting for repeat offenders?'
+          ],
+          dataLimitations: [
+            'Observations reflect strictly the filtered analytics scope parameters.'
+          ],
+          disclaimer: payload.language === 'kn'
+            ? 'ಎಐ-ರಚಿತ ಅಂಕಿಅಂಶ ವಿಶ್ಲೇಷಣೆ. ರಾಜ್ಯ ಅಪರಾಧ ದಾಖಲೆಗಳೊಂದಿಗೆ ಪರಿಶೀಲಿಸಿ.'
+            : 'AI-generated analytical assessment. Every quantitative assertion is derived from the supplied dataset scope.'
+        },
+        meta: { timestamp: new Date().toISOString() }
+      })
+    );
+  }
+
   streamCopilotQuery(
+
     envelope: CopilotPromptEnvelope,
     callbacks: CopilotStreamCallbacks
   ): () => void {

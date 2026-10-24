@@ -53,6 +53,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
 import { useTranslation } from "@/lib/i18n";
+import { exportToPDF, exportToCSV } from "@/lib/exportUtils";
 
 const PALETTE = ["#D4AF37", "#63E6D2", "#69A9FF", "#F2B66D", "#F85149", "#A78BFA", "#34D399"];
 
@@ -64,7 +65,7 @@ const SAVED_VIEWS = [
 ];
 
 export function AnalyticsPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
@@ -82,6 +83,12 @@ export function AnalyticsPage() {
   const [activeSavedView, setActiveSavedView] = useState("exec");
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "info" | "error" } | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+
+  // AI Insights State
+  const [aiInsights, setAiInsights] = useState<any | null>(null);
+  const [aiInsightsError, setAiInsightsError] = useState<string | null>(null);
+  const [aiInsightsCopied, setAiInsightsCopied] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false);
 
   useEffect(() => {
     Promise.all([apiClient.getCases(), apiClient.getTacticalAnalytics(), apiClient.getAccused()])
@@ -253,101 +260,102 @@ export function AnalyticsPage() {
     return Object.values(officers);
   }, [filteredCases]);
 
-  // Export CSV
+  // Export CSV (real, RFC-4180 with UTF-8 BOM)
   const handleExportCSV = () => {
     if (filteredCases.length === 0) {
       showToast("No records to export under current filters.", "error");
       return;
     }
-    const headers = ["FIR Number", "Category", "Priority", "Status", "Station", "District", "Date", "Officer"];
-    const rows = filteredCases.map((c) => [
-      `"${c.firNumber}"`,
-      `"${c.crimeCategory}"`,
-      `"${c.priority}"`,
-      `"${c.status}"`,
-      `"${c.policeStation}"`,
-      `"${c.district}"`,
-      `"${c.incidentDate}"`,
-      `"${c.investigatingOfficerName || "Unassigned"}"`,
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `kestrel-tactical-analytics-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCSV({
+      headers: ["FIR Number", "Category", "Priority", "Status", "Station", "District", "Date", "Officer"],
+      rows: filteredCases.map((c) => [
+        c.firNumber,
+        c.crimeCategory,
+        c.priority,
+        c.status,
+        c.policeStation,
+        c.district,
+        c.incidentDate,
+        c.investigatingOfficerName || 'Unassigned',
+      ]),
+      filename: `kestrel-tactical-analytics-${new Date().toISOString().slice(0, 10)}.csv`,
+    });
     showToast("Tactical Analytics CSV exported successfully.");
   };
 
-  // Export PDF Summary (Printable HTML Document)
+  // Export PDF (genuine binary PDF via jsPDF)
   const handleExportPDF = () => {
     if (filteredCases.length === 0) {
       showToast("No records to export under current filters.", "error");
       return;
     }
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>Kestrel Tactical Analytics Audit</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; color: #111; line-height: 1.5; }
-          h1 { font-size: 20px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 2px solid #222; padding-bottom: 6px; }
-          .meta { font-size: 12px; color: #555; margin-bottom: 20px; }
-          .kpi-row { display: flex; gap: 12px; margin-bottom: 20px; }
-          .kpi { flex: 1; border: 1px solid #ddd; padding: 10px; background: #fafafa; border-radius: 4px; }
-          .kpi-title { font-size: 11px; text-transform: uppercase; color: #666; }
-          .kpi-val { font-size: 18px; font-weight: bold; margin-top: 4px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background: #f4f4f4; }
-        </style>
-      </head>
-      <body>
-        <h1>Tactical Analytics Summary Brief</h1>
-        <div class="meta">
-          Generated: ${new Date().toISOString().slice(0, 10)} | Scope: ${filteredCases.length} Records | Risk Index: ${riskIndexScore}/100
-        </div>
-        <div class="kpi-row">
-          <div class="kpi"><div class="kpi-title">Total Records</div><div class="kpi-val">${totalCases}</div></div>
-          <div class="kpi"><div class="kpi-title">Active Cases</div><div class="kpi-val">${activeCases}</div></div>
-          <div class="kpi"><div class="kpi-title">Cleared Cases</div><div class="kpi-val">${solvedCases}</div></div>
-          <div class="kpi"><div class="kpi-title">Repeat Suspects</div><div class="kpi-val">${repeatOffendersLinked}</div></div>
-        </div>
-        <h3>Top Jurisdictions by Crime Volume</h3>
-        <table>
-          <thead><tr><th>Police Station</th><th>Incident Count</th></tr></thead>
-          <tbody>
-            ${districtVolumeData.map((d) => `<tr><td>${d.station}</td><td>${d.volume}</td></tr>`).join("")}
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `;
-
-    const blob = new Blob([htmlContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `kestrel-analytics-summary-${Date.now()}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showToast("Analytics Summary Brief downloaded.");
+    exportToPDF({
+      title: 'Tactical Analytics Summary Brief',
+      id: `ANA-${new Date().toISOString().slice(0, 10)}`,
+      classification: 'OFFICIAL LAW ENFORCEMENT',
+      author: 'Insp. Sharma (Badge #KSP-4491)',
+      date: new Date().toISOString().slice(0, 10),
+      scope: `${filteredCases.length} Records | Risk Index: ${riskIndexScore}/100`,
+      kpiRows: [
+        { label: 'Total Records', value: totalCases },
+        { label: 'Active Cases', value: activeCases },
+        { label: 'Cleared Cases', value: solvedCases },
+        { label: 'Repeat Suspects', value: repeatOffendersLinked },
+      ],
+      summaryText: `Tactical analytics export covering ${filteredCases.length} FIR records across Karnataka. Risk Index: ${riskIndexScore}/100. Average investigation cycle: ${avgInvestigationDays} days.`,
+      headers: ['Police Station', 'Volume', 'Clearance Rate'],
+      rows: districtVolumeData.map((d) => [
+        d.station,
+        d.volume,
+        `${Math.round((solvedCases / Math.max(totalCases, 1)) * 100)}%`,
+      ]),
+      filename: `kestrel-analytics-brief-${Date.now()}.pdf`,
+    });
+    showToast("Analytics PDF Brief exported.");
   };
 
-  // Generate AI Insights Action
-  const handleGenerateAiInsights = () => {
+  // Generate AI Insights Action (Groq)
+  const handleGenerateAiInsights = async () => {
     setIsGeneratingAi(true);
-    setTimeout(() => {
+    setAiInsights(null);
+    setAiInsightsError(null);
+    setShowAiPanel(true);
+    try {
+      const categoryBreakdown: Record<string, number> = {};
+      const stationBreakdown: Record<string, number> = {};
+      filteredCases.forEach((c) => {
+        categoryBreakdown[c.crimeCategory] = (categoryBreakdown[c.crimeCategory] || 0) + 1;
+        stationBreakdown[c.policeStation] = (stationBreakdown[c.policeStation] || 0) + 1;
+      });
+      const res = await apiClient.analyzeAnalytics({
+        totalCases,
+        activeCases,
+        solvedCases,
+        pendingCases,
+        repeatOffendersLinked,
+        avgInvestigationDays: parseFloat(avgInvestigationDays),
+        riskIndexScore,
+        clearanceRate: Math.round((solvedCases / Math.max(totalCases, 1)) * 100),
+        categoryBreakdown,
+        stationBreakdown,
+        timeOfDayBreakdown: {
+          night: timeOfDayData.find((t) => t.slot.includes('Night'))?.incidents || 0,
+          morning: timeOfDayData.find((t) => t.slot.includes('Morning'))?.incidents || 0,
+          afternoon: timeOfDayData.find((t) => t.slot.includes('Afternoon'))?.incidents || 0,
+          evening: timeOfDayData.find((t) => t.slot.includes('Evening'))?.incidents || 0,
+        },
+        language: language as 'en' | 'kn',
+      });
+      if (res.success && res.data) {
+        setAiInsights(res.data);
+      } else {
+        setAiInsightsError('AI analysis failed. Please retry.');
+      }
+    } catch (err: any) {
+      setAiInsightsError(err?.message || 'Network error. Please retry.');
+    } finally {
       setIsGeneratingAi(false);
-      showToast("Tactical AI heuristics synthesized from active filters.");
-    }, 500);
+    }
   };
 
   return (
@@ -425,6 +433,110 @@ export function AnalyticsPage() {
           <button onClick={() => setToastMessage(null)} className="hover:opacity-75">
             <X className="h-4 w-4" />
           </button>
+        </div>
+      )}
+
+      {/* AI Insights Panel (shown after clicking Generate AI Insights) */}
+      {showAiPanel && (
+        <div className="rounded border border-primary/30 bg-primary/5 p-4 space-y-3 font-mono text-xs animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="font-bold text-primary">AI Tactical Insights</span>
+              <span className="text-[10px] text-muted-foreground">Groq LLM</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {aiInsights && (
+                <button
+                  onClick={() => {
+                    const text = [
+                      aiInsights.executiveSummary,
+                      ...(aiInsights.keyTrends || []),
+                      ...(aiInsights.investigativeQuestions || []),
+                    ].join('\n');
+                    navigator.clipboard.writeText(text).then(() => {
+                      setAiInsightsCopied(true);
+                      setTimeout(() => setAiInsightsCopied(false), 2000);
+                    });
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded border border-border hover:bg-surface-elevated text-muted-foreground"
+                >
+                  {aiInsightsCopied ? '✓ Copied' : 'Copy'}
+                </button>
+              )}
+              <button
+                onClick={() => { setShowAiPanel(false); setAiInsights(null); setAiInsightsError(null); }}
+                className="p-0.5 rounded hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {isGeneratingAi && (
+            <div className="flex items-center gap-3 py-4">
+              <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              <span className="text-muted-foreground">Groq AI synthesising analytics insights...</span>
+            </div>
+          )}
+
+          {aiInsightsError && (
+            <div className="p-3 rounded bg-destructive/10 border border-destructive/30 text-destructive font-sans text-xs">
+              {aiInsightsError}
+            </div>
+          )}
+
+          {aiInsights && !isGeneratingAi && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {/* Executive Summary */}
+              <div className="lg:col-span-3 p-3 rounded bg-surface-elevated/60 border border-border">
+                <div className="text-[9px] uppercase font-bold text-primary tracking-wider mb-1">Executive Summary</div>
+                <p className="text-xs text-foreground font-sans leading-relaxed">{aiInsights.executiveSummary}</p>
+              </div>
+
+              {/* Key Trends */}
+              {aiInsights.keyTrends?.length > 0 && (
+                <div className="p-3 rounded bg-surface-elevated/40 border border-border space-y-1.5">
+                  <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Key Trends</div>
+                  {aiInsights.keyTrends.map((trend: string, i: number) => (
+                    <div key={i} className="flex gap-1.5 text-xs font-sans text-muted-foreground">
+                      <span className="text-primary font-bold shrink-0">›</span>
+                      <span>{trend}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Clearance Analysis */}
+              {aiInsights.clearanceAnalysis && (
+                <div className="p-3 rounded bg-surface-elevated/40 border border-border space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Clearance Analysis</div>
+                  <p className="text-xs text-muted-foreground font-sans">{aiInsights.clearanceAnalysis}</p>
+                </div>
+              )}
+
+              {/* Investigative Questions */}
+              {aiInsights.investigativeQuestions?.length > 0 && (
+                <div className="p-3 rounded bg-surface-elevated/40 border border-border space-y-1.5">
+                  <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Investigative Questions</div>
+                  {aiInsights.investigativeQuestions.map((q: string, i: number) => (
+                    <div key={i} className="flex gap-1.5 text-xs font-sans text-muted-foreground">
+                      <span className="text-primary font-bold shrink-0">{i + 1}.</span>
+                      <span>{q}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Disclaimer */}
+              {aiInsights.disclaimer && (
+                <div className="lg:col-span-3 flex gap-2 items-start">
+                  <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-muted-foreground font-sans italic">{aiInsights.disclaimer}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

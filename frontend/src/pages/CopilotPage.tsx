@@ -44,6 +44,7 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  contentKn?: string;
   timestamp: string;
   citations?: { firNumber: string; title: string }[];
   isDemo?: boolean;
@@ -52,7 +53,9 @@ interface ChatMessage {
 interface ConversationThread {
   id: string;
   title: string;
+  titleKn?: string;
   preview: string;
+  previewKn?: string;
   timestamp: string;
   isPinned?: boolean;
   messages: ChatMessage[];
@@ -68,12 +71,14 @@ export function CopilotPage() {
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
   const [evidenceList, setEvidenceList] = useState<any[]>([]);
 
-  // Active threads
+  // Active threads with bilingual support
   const [threads, setThreads] = useState<ConversationThread[]>([
     {
       id: "thread-1",
       title: "Bengaluru Urban Cybercrime Cluster",
+      titleKn: "ಬೆಂಗಳೂರು ನಗರ ಸೈಬರ್ ಅಪರಾಧ ತನಿಖಾ ಕ್ಲಸ್ಟರ್",
       preview: "Analysis of mule bank account routing in Whitefield tech corridor...",
+      previewKn: "ವೈಟ್‌ಫೀಲ್ಡ್ ತಂತ್ರಜ್ಞಾನ ವಲಯದಲ್ಲಿ ಮ್ಯೂಲ್ ಬ್ಯಾಂಕ್ ಖಾತೆಗಳ ಹಣ ವರ್ಗಾವಣೆ ವಿಶ್ಲೇಷಣೆ...",
       timestamp: "Today, 11:20 AM",
       isPinned: true,
       contextCaseIds: ["CASE-2024-WFD-0301", "CASE-2024-WFD-0305"],
@@ -82,6 +87,7 @@ export function CopilotPage() {
           id: "t1-1",
           role: "user",
           content: "Show statutory sections and modus operandi applied for cyber banking fraud in Whitefield.",
+          contentKn: "ವೈಟ್‌ಫೀಲ್ಡ್ ಸೈಬರ್ ಬ್ಯಾಂಕಿಂಗ್ ವಂಚನೆಗೆ ಅನ್ವಯಿಸಲಾದ ಶಾಸನಬದ್ಧ ಸೆಕ್ಷನ್‌ಗಳು ಮತ್ತು ಅಪರಾಧ ವಿಧಾನವನ್ನು ತೋರಿಸಿ.",
           timestamp: "11:18 AM",
         },
         {
@@ -89,6 +95,8 @@ export function CopilotPage() {
           role: "assistant",
           content:
             "Whitefield sector exhibits organized crypto/phishing syndicates leveraging APK binaries and 6-layer mule bank accounts (HDFC and Yes Bank). Primary statutory sections invoked: IPC 420 (Cheating), IPC 120B (Criminal Conspiracy), and IT Act Section 66D. Syndicate leader Vikram 'Ghost' Malhotra associates with active account networks.",
+          contentKn:
+            "ವೈಟ್‌ಫೀಲ್ಡ್ ವಲಯದಲ್ಲಿ ಎಪಿಕೆ ಬೈನರಿಗಳು ಮತ್ತು 6-ಹಂತದ ಮ್ಯೂಲ್ ಬ್ಯಾಂಕ್ ಖಾತೆಗಳನ್ನು ಬಳಸಿಕೊಂಡು ಸಂಘಟಿತ ಕ್ರಿಪ್ಟೋ/ಫಿಶಿಂಗ್ ಸಿಂಡಿಕೇಟ್‌ಗಳು ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿವೆ. ಪ್ರಮುಖ ಶಾಸನಬದ್ಧ ಸೆಕ್ಷನ್‌ಗಳು: ಐಪಿಸಿ 420 (ವಂಚನೆ), ಐಪಿಸಿ 120B (ಕ್ರಿಮಿನಲ್ ಪಿತೂರಿ), ಮತ್ತು ಐಟಿ ಕಾಯ್ದೆ ಸೆಕ್ಷನ್ 66D. ಸಿಂಡಿಕೇಟ್ ಮುಖಂಡ ವಿಕ್ರಮ್ 'ಘೋಸ್ಟ್' ಮಲ್ಹೋತ್ರಾ ಸಕ್ರಿಯ ಖಾತೆ ಜಾಲದೊಂದಿಗೆ ಸಂಪರ್ಕ ಹೊಂದಿದ್ದಾನೆ.",
           timestamp: "11:20 AM",
           citations: [
             { firNumber: "FIR-2024-WFD-0301", title: "Corporate Phishing & Wire Fraud" },
@@ -100,7 +108,9 @@ export function CopilotPage() {
     {
       id: "thread-2",
       title: "Mysuru District Activity Sweep",
+      titleKn: "ಮೈಸೂರು ಜಿಲ್ಲಾ ಗಡಿ ಪ್ರದೇಶ ಶೋಧ ಕಾರ್ಯಾಚರಣೆ",
       preview: "Cross-jurisdiction vehicle tracking on Old Madras Road corridor...",
+      previewKn: "ಹಳೆ ಮದ್ರಾಸ್ ರಸ್ತೆಯ ಕಾರಿಡಾರ್‌ನಲ್ಲಿ ಅಂತರ್-ಜಿಲ್ಲಾ ವಾಹನ ಟ್ರ್ಯಾಕಿಂಗ್...",
       timestamp: "Yesterday, 04:45 PM",
       isPinned: false,
       contextCaseIds: ["CASE-2024-KRP-0215"],
@@ -109,6 +119,7 @@ export function CopilotPage() {
           id: "t2-1",
           role: "user",
           content: "Did stolen vehicle KA-04-E-1234 cross into surrounding district checkpoints?",
+          contentKn: "ಕಳುವಾದ ವಾಹನ KA-04-E-1234 ಸುತ್ತಮುತ್ತಲಿನ ಜಿಲ್ಲಾ ಚೆಕ್‌ಪೋಸ್ಟ್‌ಗಳನ್ನು ದಾಟಿದೆಯೇ?",
           timestamp: "04:42 PM",
         },
         {
@@ -116,6 +127,8 @@ export function CopilotPage() {
           role: "assistant",
           content:
             "ANPR toll log cross-referencing indicates black sedan KA-04-E-1234 crossed Hoskote toll plaza at 02:45 AM before returning to Indiranagar prior to the 100 Feet Road jewelry heist. Vehicle is registered as stolen under FIR-2024-KRP-0215.",
+          contentKn:
+            "ಎಎನ್‌ಪಿಆರ್ ಟೋಲ್ ಲಾಗ್ ಪರಿಶೀಲನೆಯ ಪ್ರಕಾರ ಕಪ್ಪು ಸೆಡಾನ್ KA-04-E-1234 ಮುಂಜಾನೆ 02:45 ಕ್ಕೆ ಹೊಸಕೋಟೆ ಟೋಲ್ ಪ್ಲಾಜಾವನ್ನು ದಾಟಿ, ಇಂದಿರಾನಗರ 100 ಫೀಟ್ ರಸ್ತೆಯ ಚಿನ್ನಾಭರಣ ದರೋಡೆಗೆ ಮೊದಲು ಮರಳಿದೆ. ಈ ವಾಹನವು FIR-2024-KRP-0215 ಅಡಿಯಲ್ಲಿ ಕಳ್ಳತನವಾದ ದಾಖಲೆಯಾಗಿದೆ.",
           timestamp: "04:45 PM",
           citations: [{ firNumber: "FIR-2024-KRP-0215", title: "Vehicle Theft at K.R. Puram" }],
         },
@@ -124,7 +137,9 @@ export function CopilotPage() {
     {
       id: "thread-3",
       title: "Drug & Extortion Priority Alerts",
+      titleKn: "ಮಾದಕ ದ್ರವ್ಯ ಮತ್ತು ಸುಲಿಗೆ ಪ್ರಕರಣಗಳ ಆದ್ಯತಾ ಎಚ್ಚರಿಕೆಗಳು",
       preview: "Commercial establishment extortion threats in Koramangala pubs...",
+      previewKn: "ಕೋರಮಂಗಲ ವಾಣಿಜ್ಯ ಸಂಸ್ಥೆಗಳಲ್ಲಿ ಸುಲಿಗೆ ಬೆದರಿಕೆಗಳು...",
       timestamp: "21 Oct 2024",
       isPinned: false,
       contextCaseIds: ["CASE-2024-KORM-0088"],
@@ -133,6 +148,7 @@ export function CopilotPage() {
           id: "t3-1",
           role: "user",
           content: "Summarise extortion complaints lodged by Koramangala restaurant owners.",
+          contentKn: "ಕೋರಮಂಗಲ ರೆಸ್ಟೋರೆಂಟ್ ಮಾಲೀಕರು ದಾಖಲಿಸಿದ ಸುಲಿಗೆ ದೂರುಗಳನ್ನು ಸಂಕ್ಷಿಪ್ತಗೊಳಿಸಿ.",
           timestamp: "02:10 PM",
         },
         {
@@ -140,6 +156,8 @@ export function CopilotPage() {
           role: "assistant",
           content:
             "Two retail establishments on 80 Feet Road registered complaints regarding late-night armed extortion demands by Raju Nayak's gang members. CCTV footage recovered under exhibit EVID-004 verifies suspect identity.",
+          contentKn:
+            "80 ಫೀಟ್ ರಸ್ತೆಯ ಎರಡು ವಾಣಿಜ್ಯ ಸಂಸ್ಥೆಗಳು ರಾಜು ನಾಯಕ್ ಗ್ಯಾಂಗ್ ಸದಸ್ಯರಿಂದ ತಡರಾತ್ರಿ ಸಶಸ್ತ್ರ ಸುಲಿಗೆ ಬೆದರಿಕೆ ಕುರಿತು ದೂರು ನೀಡಿವೆ. EVID-004 ಅಡಿಯಲ್ಲಿ ವಶಪಡಿಸಿಕೊಳ್ಳಲಾದ ಸಿಸಿಟಿವಿ ದೃಶ್ಯಾವಳಿಗಳು ಆರೋಪಿಗಳ ಗುರುತನ್ನು ದೃಢಪಡಿಸಿವೆ.",
           timestamp: "02:12 PM",
           citations: [{ firNumber: "FIR-2024-KORM-0088", title: "Extortion at Koramangala Gastro-Pub" }],
         },
@@ -470,37 +488,40 @@ export function CopilotPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Export Executive Printable PDF (.html / print window)
+  // Export Executive Printable PDF (.html / print window with download fallback)
   const handleExportExecutivePDF = () => {
     if (messages.length === 0) {
       alert("No conversation messages to export.");
       return;
     }
 
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      alert("Pop-up blocker prevented opening export view. Please permit pop-ups for Kestrel.");
-      return;
-    }
+    const threadTitle = language === "kn" ? (activeThread.titleKn || activeThread.title) : activeThread.title;
 
     const messagesHtml = messages
       .map(
-        (m) => `
+        (m) => {
+          const displayContent = language === "kn" ? (m.contentKn || m.content) : m.content;
+          return `
         <div class="msg-box ${m.role}">
           <div class="msg-header">
-            <b>${m.role === "assistant" ? "AI INVESTIGATOR (KESTREL CO-PILOT)" : "INVESTIGATING OFFICER"}</b>
+            <b>${
+              m.role === "assistant"
+                ? (language === "kn" ? "ಎಐ ತನಿಖಾಧಿಕಾರಿ (ಕೆಸ್ಟ್ರೆಲ್ ಕೋ-ಪೈಲಟ್)" : "AI INVESTIGATOR (KESTREL CO-PILOT)")
+                : (language === "kn" ? "ತನಿಖಾಧಿಕಾರಿ (ಐಒ)" : "INVESTIGATING OFFICER")
+            }</b>
             <span>${m.timestamp}</span>
           </div>
-          <div class="msg-body">${m.content.replace(/\n/g, "<br/>")}</div>
+          <div class="msg-body">${displayContent.replace(/\n/g, "<br/>")}</div>
           ${
             m.citations && m.citations.length > 0
-              ? `<div class="citations"><b>Verified Citations:</b> ${m.citations
+              ? `<div class="citations"><b>${language === "kn" ? "ದೃಢೀಕೃತ ಎಫ್‌ಐಆರ್ ಉಲ್ಲೇಖಗಳು:" : "Verified Citations:"}</b> ${m.citations
                   .map((c) => `<span class="tag">${c.firNumber}: ${c.title}</span>`)
                   .join(" ")}</div>`
               : ""
           }
         </div>
-      `
+      `;
+        }
       )
       .join("");
 
@@ -518,11 +539,12 @@ export function CopilotPage() {
       )
       .join("");
 
-    printWindow.document.write(`
+    const fullDocHtml = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Kestrel Executive AI Investigation Brief - ${activeThread.title}</title>
+        <meta charset="utf-8" />
+        <title>Kestrel Executive AI Investigation Brief - ${threadTitle}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; margin: 36px; color: #111; line-height: 1.5; font-size: 13px; }
           .header { border-bottom: 2px solid #222; padding-bottom: 12px; margin-bottom: 20px; }
@@ -550,14 +572,14 @@ export function CopilotPage() {
           <div class="badge">CONFIDENTIAL // LAW ENFORCEMENT SENSITIVE</div>
           <h1>Kestrel AI Investigator Executive Brief</h1>
           <div class="meta">
-            Thread: <b>${activeThread.title}</b> | Generated: ${new Date().toLocaleString()} | Classification: Official Police Telemetry
+            Thread: <b>${threadTitle}</b> | Generated: ${new Date().toLocaleString()} | Classification: Official Police Telemetry
           </div>
         </div>
 
-        <div class="section-title">Investigative Conversation Transcripts</div>
+        <div class="section-title">${language === "kn" ? "ತನಿಖಾ ಸಂಭಾಷಣೆ ಲಾಗ್" : "Investigative Conversation Transcripts"}</div>
         ${messagesHtml}
 
-        <div class="section-title">Correlated Crime Records in Scope</div>
+        <div class="section-title">${language === "kn" ? "ಸಂಬಂಧಿತ ಪ್ರಕರಣ ದಾಖಲೆಗಳು" : "Correlated Crime Records in Scope"}</div>
         <table>
           <thead>
             <tr>
@@ -575,25 +597,52 @@ export function CopilotPage() {
 
         <script>
           window.onload = function() {
-            window.print();
+            setTimeout(function() { window.print(); }, 200);
           };
         </script>
       </body>
       </html>
-    `);
-    printWindow.document.close();
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(fullDocHtml);
+      printWindow.document.close();
+    } else {
+      // Fallback if popup blocked: download HTML file directly
+      const blob = new Blob([fullDocHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `kestrel-brief-${Date.now()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     setShowExportModal(false);
-    setToastMessage("Generated Executive Brief for printing or saving to PDF.");
+    setToastMessage(language === "kn" ? "ಕಾರ್ಯಕಾರಿ ವರದಿ ಮುದ್ರಣ/ಪಿಡಿಎಫ್ ಡೌನ್‌ಲೋಡ್ ಸಿದ್ಧವಾಗಿದೆ." : "Generated Executive Brief for printing or saving to PDF.");
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const SUGGESTED_QUERIES = [
-    "Summarise patterns across Indiranagar burglary cases",
-    "Identify connections between repeat suspects and vehicle KA-04-E-1234",
-    "Show statutory sections applied for cyber fraud in Whitefield",
-    "Compare case trends across East and Central Bengaluru divisions",
-    "Find records associated with FIR-2024-INDR-0102",
-  ];
+  const SUGGESTED_QUERIES = useMemo(() => {
+    return language === "kn"
+      ? [
+          "ಇಂದಿರಾನಗರ ಕನ್ನಗಳವು ಪ್ರಕರಣಗಳ ವಿಧಾನಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಿ",
+          "ಮರುಕಳಿಸುವ ಅಪರಾಧಿಗಳು ಮತ್ತು ವಾಹನ KA-04-E-1234 ನಡುವಿನ ಸಂಪರ್ಕ ಗುರುತಿಸಿ",
+          "ವೈಟ್‌ಫೀಲ್ಡ್ ಸೈಬರ್ ವಂಚನೆಗೆ ದಾಖಲಾದ ಶಾಸನಬದ್ಧ ಸೆಕ್ಷನ್‌ಗಳನ್ನು ತೋರಿಸಿ",
+          "ಪೂರ್ವ ಮತ್ತು ಕೇಂದ್ರ ವಲಯಗಳ ಅಪರಾಧ ಪ್ರವೃತ್ತಿಗಳನ್ನು ಹೋಲಿಸಿ",
+          "FIR-2024-INDR-0102 ಪ್ರಕರಣಕ್ಕೆ ಸಂಬಂಧಿಸಿದ ದಾಖಲೆಗಳನ್ನು ಹುಡುಕಿ",
+        ]
+      : [
+          "Summarise patterns across Indiranagar burglary cases",
+          "Identify connections between repeat suspects and vehicle KA-04-E-1234",
+          "Show statutory sections applied for cyber fraud in Whitefield",
+          "Compare case trends across East and Central Bengaluru divisions",
+          "Find records associated with FIR-2024-INDR-0102",
+        ];
+  }, [language]);
 
   return (
     <div className="space-y-4 font-mono text-xs">
@@ -660,17 +709,17 @@ export function CopilotPage() {
               <div className="flex items-center gap-2 truncate">
                 <BrainCircuit className="h-4 w-4 text-primary shrink-0" />
                 <span className="font-bold text-foreground truncate text-xs">
-                  {activeThread.title}
+                  {language === "kn" ? (activeThread.titleKn || activeThread.title) : activeThread.title}
                 </span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 shrink-0">
-                  {language}
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 shrink-0 uppercase font-mono">
+                  {language === "kn" ? "ಕನ್ನಡ" : "EN"}
                 </Badge>
               </div>
 
               <div className="flex items-center gap-3 text-[10px] text-muted-foreground shrink-0 font-mono">
                 <span className="hidden sm:inline text-positive flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-positive inline-block" />
-                  GROUNDED ON 60 CASES
+                  {language === "kn" ? "157 ಪ್ರಕರಣಗಳ ಆಧಾರಿತ" : "GROUNDED ON 157 CASES"}
                 </span>
                 <button
                   onClick={handleNewConversation}
@@ -678,7 +727,7 @@ export function CopilotPage() {
                   title="Start fresh conversation"
                 >
                   <RotateCcw className="h-3 w-3" />
-                  <span className="hidden md:inline">Reset</span>
+                  <span className="hidden md:inline">{language === "kn" ? "ಮರುಹೊಂದಿಸಿ" : "Reset"}</span>
                 </button>
               </div>
             </CardHeader>
@@ -726,26 +775,37 @@ export function CopilotPage() {
                         {/* Header with speaker label & timestamp */}
                         <div className="flex items-center justify-between text-[10px] text-muted-foreground pb-1 border-b border-border/40 font-mono">
                           <span className={isAsst ? "text-primary font-bold" : "text-foreground font-bold"}>
-                            {isAsst ? "AI INVESTIGATOR" : "INVESTIGATING OFFICER"}
+                            {isAsst
+                              ? (language === "kn" ? "ಎಐ ತನಿಖಾಧಿಕಾರಿ" : "AI INVESTIGATOR")
+                              : (language === "kn" ? "ತನಿಖಾಧಿಕಾರಿ (ಐಒ)" : "INVESTIGATING OFFICER")}
                           </span>
                           <span>{m.timestamp}</span>
                         </div>
 
                         {/* Message content */}
                         <div className="text-xs font-sans leading-relaxed whitespace-pre-wrap">
-                          {m.content ? (
-                            <>
-                              {m.content}
-                              {isAsst && isGenerating && m.id === generatingMsgId && (
-                                <span className="inline-block w-1.5 h-3.5 bg-primary ml-1 animate-pulse align-middle" />
-                              )}
-                            </>
-                          ) : isAsst && isGenerating && m.id === generatingMsgId ? (
-                            <div className="flex items-center gap-2 text-primary font-mono text-xs py-1">
-                              <span className="h-2 w-2 rounded-full bg-primary animate-ping" />
-                              <span>Synthesizing intelligence & grounding FIR records...</span>
-                            </div>
-                          ) : null}
+                          {(() => {
+                            const displayContent = language === "kn" ? (m.contentKn || m.content) : m.content;
+                            if (displayContent) {
+                              return (
+                                <>
+                                  {displayContent}
+                                  {isAsst && isGenerating && m.id === generatingMsgId && (
+                                    <span className="inline-block w-1.5 h-3.5 bg-primary ml-1 animate-pulse align-middle" />
+                                  )}
+                                </>
+                              );
+                            }
+                            if (isAsst && isGenerating && m.id === generatingMsgId) {
+                              return (
+                                <div className="flex items-center gap-2 text-primary font-mono text-xs py-1">
+                                  <span className="h-2 w-2 rounded-full bg-primary animate-ping" />
+                                  <span>{language === "kn" ? "ಗುಪ್ತಚರ ದಾಖಲೆಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ..." : "Synthesizing intelligence & grounding FIR records..."}</span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
 
                         {/* Verified Case Citations */}
@@ -1008,9 +1068,11 @@ export function CopilotPage() {
                     <div className="truncate space-y-0.5">
                       <div className="font-bold text-xs truncate flex items-center gap-1">
                         {t.isPinned && <Pin className="h-2.5 w-2.5 text-primary shrink-0" />}
-                        <span className="truncate">{t.title}</span>
+                        <span className="truncate">{language === "kn" ? (t.titleKn || t.title) : t.title}</span>
                       </div>
-                      <div className="text-[10px] truncate opacity-80 font-sans">{t.preview}</div>
+                      <div className="text-[10px] truncate opacity-80 font-sans">
+                        {language === "kn" ? (t.previewKn || t.preview) : t.preview}
+                      </div>
                     </div>
                     <span className="text-[9px] shrink-0 opacity-60 font-mono mt-0.5">
                       {t.timestamp}

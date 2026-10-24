@@ -168,6 +168,12 @@ export function NetworkPage() {
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // AI Analysis State
+  const [aiAnalysis, setAiAnalysis] = useState<any | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiCopied, setAiCopied] = useState(false);
+
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -449,20 +455,88 @@ export function NetworkPage() {
   // Real Export JSON Network Topology
   const handleExportGraph = () => {
     const payload = {
+      exportSchema: 'kestrel-network-v1',
       timestamp: new Date().toISOString(),
+      classification: 'OFFICIAL LAW ENFORCEMENT',
       nodes: nodes.filter((n) => !n.hidden),
       edges: edges,
     };
-    const jsonString =
-      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+    const jsonStr = JSON.stringify(payload, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", jsonString);
-    link.setAttribute("download", `kestrel-criminal-network-${Date.now()}.json`);
+    link.href = url;
+    link.download = `kestrel-criminal-network-${Date.now()}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     setToastMessage("Criminal network topology exported as JSON.");
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Run Groq AI Network Explain
+  const { t, language } = useTranslation();
+  const handleRunAiExplain = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    setAiAnalysis(null);
+    try {
+      const visibleNodes = nodes.filter((n) => !n.hidden);
+      const payload = {
+        nodes: visibleNodes.map((n) => ({
+          id: n.id,
+          label: n.data.label,
+          type: n.data.entityType,
+          severity: n.data.severity,
+          subLabel: n.data.subLabel,
+          connectionsCount: edges.filter(
+            (e) => e.source === n.id || e.target === n.id
+          ).length,
+        })),
+        edges: edges.map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          label: e.label,
+        })),
+        activeFilters: { entityType: selectedEntityType, risk: selectedRisk, search: searchQuery },
+        language: language as 'en' | 'kn',
+      };
+      const res = await apiClient.explainNetwork(payload);
+      if (res.success && res.data) {
+        setAiAnalysis(res.data);
+      } else {
+        setAiError('AI analysis failed. Please retry.');
+      }
+    } catch (err: any) {
+      setAiError(err?.message || 'Network error. Please retry.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleCopyAiAnalysis = () => {
+    if (!aiAnalysis) return;
+    const text = [
+      `KESTREL AI Network Analysis`,
+      `Generated: ${new Date().toLocaleString()}`,
+      ``,
+      `EXECUTIVE SUMMARY`,
+      aiAnalysis.executiveSummary,
+      ``,
+      `NETWORK TOPOLOGY`,
+      aiAnalysis.networkTopology,
+      ``,
+      `INVESTIGATIVE LEADS`,
+      ...(aiAnalysis.investigativeLeads || []).map((l: string, i: number) => `${i + 1}. ${l}`),
+      ``,
+      `DISCLAIMER: ${aiAnalysis.disclaimer}`,
+    ].join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      setAiCopied(true);
+      setTimeout(() => setAiCopied(false), 2000);
+    });
   };
 
   // Metrics summary
@@ -475,8 +549,6 @@ export function NetworkPage() {
     () => new Set(cases.map((c) => c.district).filter(Boolean)).size,
     [cases]
   );
-
-  const { t } = useTranslation();
 
   return (
     <div className="space-y-3 font-mono text-xs">
@@ -966,98 +1038,186 @@ export function NetworkPage() {
         )}
       </div>
 
-      {/* 6. AI Network Analysis Right-Side Drawer (UI-Only Placeholder) */}
+      {/* 6. AI Network Analysis Right-Side Drawer — Live Groq Integration */}
       {isAiDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px] animate-fade-in">
-          <div className="w-full max-w-md sm:max-w-[420px] h-full bg-card border-l border-border p-6 overflow-y-auto space-y-4 font-mono text-xs shadow-2xl flex flex-col justify-between">
-            <div className="space-y-4">
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <div>
-                    <h3 className="font-bold text-foreground text-sm">AI Network Analysis</h3>
-                    <span className="text-[10px] text-muted-foreground">
-                      Network relationship analysis
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsAiDrawerOpen(false)}
-                  className="p-1 rounded hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Informative Placeholder Notice */}
-              <div className="p-4 rounded bg-surface-elevated/70 border border-border space-y-2">
-                <div className="flex items-center gap-2 text-primary font-bold">
-                  <Info className="h-4 w-4" />
-                  <span>Integration Status: Backend In Progress</span>
-                </div>
-                <p className="text-muted-foreground text-xs font-sans leading-relaxed">
-                  Relational AI graph analysis will be connected in a later phase. This analytical
-                  workspace is ready for LLM synthesis of co-accused centrality, gang syndicate
-                  hierarchies, and criminal conduit escape routes.
-                </p>
-              </div>
-
-              {/* Reserved Network Summary */}
-              <div className="p-3.5 rounded bg-surface-elevated/40 border border-border/80 space-y-2">
-                <div className="text-[10px] uppercase font-bold text-foreground tracking-wider">
-                  Active Network Topology Scope
-                </div>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Entities in Scope:</span>
-                    <span className="font-bold text-foreground font-mono">{totalEntities}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Relational Edges:</span>
-                    <span className="font-bold text-foreground font-mono">{totalConnections}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Critical Priority Nodes:</span>
-                    <span className="font-bold text-destructive font-mono">
-                      {criticalEntities}
-                    </span>
-                  </div>
+          <div className="w-full max-w-md sm:max-w-[440px] h-full bg-card border-l border-border p-5 overflow-y-auto space-y-4 font-mono text-xs shadow-2xl flex flex-col">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="font-bold text-foreground text-sm">AI Network Analysis</h3>
+                  <span className="text-[10px] text-muted-foreground">
+                    Groq LLM · Syndicate Intelligence
+                  </span>
                 </div>
               </div>
-
-              {/* Reserved Area for Future Relationship Patterns & Follow-up Questions */}
-              <div className="space-y-2">
-                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">
-                  Reserved Relationship Patterns & Actions
-                </span>
-                <div className="p-3.5 rounded border border-dashed border-border/80 text-muted-foreground font-sans text-xs space-y-1.5">
-                  <p>When connected, the AI Network Analysis engine will evaluate:</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground/90">
-                    <li>Betweenness centrality of key syndicate brokers</li>
-                    <li>Repeated co-accused filings across adjacent stations</li>
-                    <li>Shared vehicle getaway conduit correlations</li>
-                  </ul>
-                </div>
-              </div>
+              <button
+                onClick={() => setIsAiDrawerOpen(false)}
+                className="p-1.5 rounded hover:bg-surface-elevated text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close AI Drawer"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Drawer Footer Actions */}
-            <div className="pt-4 border-t border-border flex justify-end gap-2">
+            {/* Scope Stats */}
+            <div className="grid grid-cols-3 gap-2 shrink-0">
+              {[
+                { label: 'Entities', value: totalEntities, color: 'text-primary' },
+                { label: 'Edges', value: totalConnections, color: 'text-primary' },
+                { label: 'Critical', value: criticalEntities, color: 'text-destructive' },
+              ].map((s) => (
+                <div key={s.label} className="p-2 rounded bg-surface-elevated/60 border border-border text-center">
+                  <div className={`text-lg font-bold font-mono ${s.color}`}>{s.value}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase">{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Run / Retry Button */}
+            {!aiLoading && !aiAnalysis && (
+              <button
+                onClick={handleRunAiExplain}
+                className="w-full py-3 rounded bg-primary/10 border border-primary/40 text-primary font-bold hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                {language === 'kn' ? 'ಎಐ ವಿಶ್ಲೇಷಣೆ ಚಾಲಿಸಿ' : 'Run AI Analysis'}
+              </button>
+            )}
+
+            {/* Loading */}
+            {aiLoading && (
+              <div className="flex flex-col items-center justify-center py-10 gap-3">
+                <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <span className="text-muted-foreground text-xs">
+                  {language === 'kn' ? 'ಗ್ರೋಕ್ ಎಐ ವಿಶ್ಲೇಷಿಸುತ್ತಿದೆ...' : 'Groq AI analysing network...'}
+                </span>
+              </div>
+            )}
+
+            {/* Error */}
+            {aiError && (
+              <div className="p-3 rounded bg-destructive/10 border border-destructive/30 text-destructive font-sans text-xs flex flex-col gap-2">
+                <span>{aiError}</span>
+                <button
+                  onClick={handleRunAiExplain}
+                  className="self-start px-3 py-1 rounded border border-destructive/40 hover:bg-destructive/10 text-destructive text-xs font-mono"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Analysis Results */}
+            {aiAnalysis && !aiLoading && (
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {/* Executive Summary */}
+                <div className="p-3 rounded bg-primary/5 border border-primary/20 space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-primary tracking-wider">Executive Summary</div>
+                  <p className="text-xs text-foreground font-sans leading-relaxed">{aiAnalysis.executiveSummary}</p>
+                </div>
+
+                {/* Network Topology */}
+                <div className="p-3 rounded bg-surface-elevated/50 border border-border space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Network Topology</div>
+                  <p className="text-xs text-muted-foreground font-sans leading-relaxed">{aiAnalysis.networkTopology}</p>
+                </div>
+
+                {/* Key Entities */}
+                {aiAnalysis.keyEntities?.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Key Entities</div>
+                    {aiAnalysis.keyEntities.map((ent: any, i: number) => (
+                      <div key={i} className="p-2.5 rounded border border-border bg-surface-elevated/40 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground">{ent.name}</span>
+                          <span className="text-[9px] text-primary border border-primary/30 px-1.5 py-0.5 rounded font-mono">{ent.role}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-sans">{ent.rationale}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Detected Syndicates */}
+                {aiAnalysis.detectedSyndicates?.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Detected Syndicates</div>
+                    {aiAnalysis.detectedSyndicates.map((syn: any, i: number) => (
+                      <div key={i} className="p-2.5 rounded border border-[#A78BFA]/40 bg-[#A78BFA]/5 space-y-1">
+                        <div className="font-bold text-[#A78BFA]">{syn.name}</div>
+                        {syn.members?.length > 0 && (
+                          <div className="text-[10px] text-muted-foreground">{syn.members.join(' · ')}</div>
+                        )}
+                        {syn.modusOperandi && (
+                          <p className="text-[10px] text-foreground font-sans">{syn.modusOperandi}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Investigative Leads */}
+                {aiAnalysis.investigativeLeads?.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Investigative Leads</div>
+                    {aiAnalysis.investigativeLeads.map((lead: string, i: number) => (
+                      <div key={i} className="flex gap-2 p-2 rounded bg-surface-elevated/40 border border-border">
+                        <span className="text-primary font-bold shrink-0">{i + 1}.</span>
+                        <span className="text-xs text-foreground font-sans">{lead}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Data Limitations */}
+                {aiAnalysis.dataLimitations?.length > 0 && (
+                  <div className="p-2.5 rounded bg-[#F2B66D]/5 border border-[#F2B66D]/30 space-y-1">
+                    <div className="text-[9px] uppercase font-bold text-[#F2B66D] tracking-wider">Data Limitations</div>
+                    {aiAnalysis.dataLimitations.map((lim: string, i: number) => (
+                      <p key={i} className="text-[10px] text-muted-foreground font-sans">{lim}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Disclaimer */}
+                {aiAnalysis.disclaimer && (
+                  <div className="p-2.5 rounded bg-surface-elevated/40 border border-border/50 flex gap-2">
+                    <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-muted-foreground font-sans italic">{aiAnalysis.disclaimer}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Footer Actions */}
+            <div className="pt-3 border-t border-border flex items-center justify-between gap-2 shrink-0">
+              {aiAnalysis && (
+                <>
+                  <button
+                    onClick={handleCopyAiAnalysis}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover:bg-surface-elevated text-muted-foreground hover:text-foreground text-xs transition-colors"
+                  >
+                    {aiCopied ? '✓ Copied' : 'Copy Analysis'}
+                  </button>
+                  <button
+                    onClick={handleRunAiExplain}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-primary/40 text-primary hover:bg-primary/10 text-xs transition-colors"
+                  >
+                    <RotateCcw className="h-3 w-3" /> Re-analyse
+                  </button>
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsAiDrawerOpen(false)}
-                className="font-mono text-xs"
+                className="font-mono text-xs ml-auto"
               >
-                Close Drawer
+                Close
               </Button>
-              <Link to="/copilot">
-                <Button variant="tactical" size="sm" className="gap-1.5 font-mono text-xs">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Open AI Investigator</span>
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

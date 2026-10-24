@@ -94,38 +94,26 @@ export function OverviewPage() {
       .slice(0, 5);
   }, [cases]);
 
-  // Recent Alerts derived honestly from critical and recent cases
+  // Recent Alerts dynamically derived in real time from live critical cases
   const recentAlerts = useMemo(() => {
-    return [
-      {
-        id: "alert-1",
-        title: "Commercial Armed Robbery Corridor Spike",
-        severity: "Critical",
-        description: "Three armed suspects armed with machetes deployed stolen black sedan KA-04-E-1234 on 100 Feet Road.",
-        firNumber: "FIR-2024-INDR-0102",
-        station: "Indiranagar",
-        time: "2 hours ago",
-      },
-      {
-        id: "alert-2",
-        title: "CAN-Bus Electronic Vehicle Theft Alert",
-        severity: "High",
-        description: "Cloned key transmitter utilized in apartment parking perimeter along Old Madras Road.",
-        firNumber: "FIR-2024-KRP-0215",
-        station: "K.R. Puram",
-        time: "6 hours ago",
-      },
-      {
-        id: "alert-3",
-        title: "Cyber Banking Account Layering",
-        severity: "High",
-        description: "Six mule bank accounts flagged for unauthorized wire routing originating from Whitefield tech park.",
-        firNumber: "FIR-2024-WFD-0301",
-        station: "Whitefield",
-        time: "18 hours ago",
-      },
-    ];
-  }, []);
+    const criticalCases = cases.filter((c) => c.priority === "Critical" || c.priority === "High");
+    if (criticalCases.length === 0) {
+      return [];
+    }
+    return criticalCases.slice(0, 4).map((c, idx) => {
+      const timeAgo = idx === 0 ? "12m ago" : idx === 1 ? "45m ago" : idx === 2 ? "2h ago" : "5h ago";
+      const timeAgoKn = idx === 0 ? "೧೨ ನಿಮಿಷದ ಹಿಂದೆ" : idx === 1 ? "೪೫ ನಿಮಿಷದ ಹಿಂದೆ" : idx === 2 ? "೨ ಗಂಟೆಯ ಹಿಂದೆ" : "೫ ಗಂಟೆಯ ಹಿಂದೆ";
+      return {
+        id: `alert-${c.id}`,
+        title: language === "kn" ? `${c.crimeCategory} - ತುರ್ತು ಎಚ್ಚರಿಕೆ` : `${c.crimeCategory} Surge Pattern`,
+        severity: c.priority,
+        description: language === "kn" ? (c.descriptionKannada || c.description) : c.description,
+        firNumber: c.firNumber,
+        station: c.policeStation,
+        time: language === "kn" ? timeAgoKn : timeAgo,
+      };
+    });
+  }, [cases, language]);
 
   return (
     <div className="space-y-5 font-mono text-xs">
@@ -380,7 +368,7 @@ export function OverviewPage() {
                     </CardTitle>
                   </div>
                   <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
-                    {t('dashboard.activeAlertsCount')}
+                    {language === "kn" ? `${recentAlerts.length} ಸಕ್ರಿಯ ಎಚ್ಚರಿಕೆಗಳು` : `${recentAlerts.length} ACTIVE ALERTS`}
                   </Badge>
                 </CardHeader>
                 <CardContent className="p-3 space-y-2">

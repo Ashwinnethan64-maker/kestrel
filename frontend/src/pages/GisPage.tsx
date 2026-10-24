@@ -141,7 +141,7 @@ function MapViewportSync({ enabled, onBoundsChange }: MapViewportSyncProps) {
 }
 
 export function GisPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,6 +167,12 @@ export function GisPage() {
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // AI Analysis State
+  const [mapAiAnalysis, setMapAiAnalysis] = useState<any | null>(null);
+  const [mapAiLoading, setMapAiLoading] = useState(false);
+  const [mapAiError, setMapAiError] = useState<string | null>(null);
+  const [mapAiCopied, setMapAiCopied] = useState(false);
 
   // Layer Accordion Collapsibles
   const [openSections, setOpenSections] = useState<{
@@ -196,6 +202,15 @@ export function GisPage() {
   const [postgisLatency, setPostgisLatency] = useState<number | null>(null);
   const [activeBounds, setActiveBounds] = useState<BoundingBox | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Close selectedPin on Escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedPin(null);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -1024,18 +1039,27 @@ export function GisPage() {
                         {selectedPin.firNumber}
                       </span>
                     </div>
-                    <Badge
-                      variant={
-                        selectedPin.priority === "Critical"
-                          ? "destructive"
-                          : selectedPin.priority === "High"
-                          ? "attention"
-                          : "tactical"
-                      }
-                      className="text-[9px]"
-                    >
-                      {selectedPin.priority}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge
+                        variant={
+                          selectedPin.priority === "Critical"
+                            ? "destructive"
+                            : selectedPin.priority === "High"
+                            ? "attention"
+                            : "tactical"
+                        }
+                        className="text-[9px]"
+                      >
+                        {selectedPin.priority}
+                      </Badge>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelectedPin(null); }}
+                        aria-label="Close incident details"
+                        className="p-0.5 rounded hover:bg-surface-elevated text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1098,102 +1122,199 @@ export function GisPage() {
         </div>
       </div>
 
-      {/* 4. AI Area Analysis Right-Side Drawer (UI-Only Placeholder - No Simulated Results) */}
+      {/* 4. AI Area Analysis Drawer — Live Groq Integration */}
       {isAiDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px] animate-fade-in">
-          <div className="w-full max-w-md sm:max-w-[420px] h-full bg-card border-l border-border p-6 overflow-y-auto space-y-4 font-mono text-xs shadow-2xl flex flex-col justify-between">
-            <div className="space-y-4">
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <div>
-                    <h3 className="font-bold text-foreground text-sm">AI Area Analysis</h3>
-                    <span className="text-[10px] text-muted-foreground">
-                      Viewport intelligence summary
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsAiDrawerOpen(false)}
-                  className="p-1 rounded hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Informative Placeholder Notice */}
-              <div className="p-4 rounded bg-surface-elevated/70 border border-border space-y-2">
-                <div className="flex items-center gap-2 text-primary font-bold">
-                  <Info className="h-4 w-4" />
-                  <span>Integration Status: Backend In Progress</span>
-                </div>
-                <p className="text-muted-foreground text-xs font-sans leading-relaxed">
-                  Geospatial AI analysis will be connected in a later phase. This analytical
-                  workspace is ready for LLM synthesis of active patrol telemetry, incident
-                  hotspots, and syndicate correlation.
-                </p>
-              </div>
-
-              {/* Reserved Geographic Viewport Overview */}
-              <div className="p-3.5 rounded bg-surface-elevated/40 border border-border/80 space-y-2">
-                <div className="text-[10px] uppercase font-bold text-foreground tracking-wider">
-                  Active Viewport Telemetry Scope
-                </div>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Active Filtered Records:</span>
-                    <span className="font-bold text-foreground font-mono">
-                      {filteredCases.length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">District Selection:</span>
-                    <span className="font-bold text-foreground">
-                      {selectedDistrict === "all" ? "All Districts" : selectedDistrict}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Category Selection:</span>
-                    <span className="font-bold text-foreground">
-                      {selectedCategory === "all" ? "All Categories" : selectedCategory}
-                    </span>
-                  </div>
+          <div className="w-full max-w-md sm:max-w-[440px] h-full bg-card border-l border-border p-5 overflow-y-auto font-mono text-xs shadow-2xl flex flex-col gap-4">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="font-bold text-foreground text-sm">AI Area Analysis</h3>
+                  <span className="text-[10px] text-muted-foreground">
+                    Groq LLM · Geospatial Intelligence
+                  </span>
                 </div>
               </div>
-
-              {/* Reserved Area for Future Geographic Summaries & Category Breakdowns */}
-              <div className="space-y-2">
-                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">
-                  Reserved Geographic Summaries & Actions
-                </span>
-                <div className="p-3.5 rounded border border-dashed border-border/80 text-muted-foreground font-sans text-xs space-y-1.5">
-                  <p>When connected, the AI Area Analysis engine will evaluate:</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground/90">
-                    <li>Multi-incident spatial clustering and corridor escape routes</li>
-                    <li>Repeat offender modus operandi match within 5km radius</li>
-                    <li>Patrol dispatch and ANPR surveillance recommendations</li>
-                  </ul>
-                </div>
-              </div>
+              <button
+                onClick={() => setIsAiDrawerOpen(false)}
+                className="p-1.5 rounded hover:bg-surface-elevated text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close AI area analysis drawer"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Drawer Footer Actions */}
-            <div className="pt-4 border-t border-border flex justify-end gap-2">
+            {/* Scope Stats */}
+            <div className="grid grid-cols-3 gap-2 shrink-0">
+              {[
+                { label: 'Incidents', value: filteredCases.length, color: 'text-primary' },
+                { label: 'District', value: selectedDistrict === 'all' ? 'All' : selectedDistrict.split(' ')[0], color: 'text-foreground' },
+                { label: 'Category', value: selectedCategory === 'all' ? 'All' : selectedCategory.split(' ')[0], color: 'text-foreground' },
+              ].map((s) => (
+                <div key={s.label} className="p-2 rounded bg-surface-elevated/60 border border-border text-center">
+                  <div className={`text-sm font-bold font-mono truncate ${s.color}`}>{s.value}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase">{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Run / Retry Button */}
+            {!mapAiLoading && !mapAiAnalysis && (
+              <button
+                onClick={async () => {
+                  setMapAiLoading(true);
+                  setMapAiError(null);
+                  setMapAiAnalysis(null);
+                  try {
+                    const stationBreakdown: Record<string, number> = {};
+                    const categoryBreakdown: Record<string, number> = {};
+                    filteredCases.forEach((c) => {
+                      stationBreakdown[c.policeStation] = (stationBreakdown[c.policeStation] || 0) + 1;
+                      categoryBreakdown[c.crimeCategory] = (categoryBreakdown[c.crimeCategory] || 0) + 1;
+                    });
+                    const res = await apiClient.analyzeMapArea({
+                      totalIncidents: filteredCases.length,
+                      selectedRegion: selectedDistrict !== 'all' ? selectedDistrict : 'Bengaluru Metro',
+                      stationBreakdown,
+                      categoryBreakdown,
+                      activeFilters: { district: selectedDistrict, station: selectedStation, category: selectedCategory, priority: selectedPriority },
+                      language: language as 'en' | 'kn',
+                    });
+                    if (res.success && res.data) {
+                      setMapAiAnalysis(res.data);
+                    } else {
+                      setMapAiError('AI analysis failed. Please retry.');
+                    }
+                  } catch (err: any) {
+                    setMapAiError(err?.message || 'Network error. Please retry.');
+                  } finally {
+                    setMapAiLoading(false);
+                  }
+                }}
+                className="w-full py-3 rounded bg-primary/10 border border-primary/40 text-primary font-bold hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                {language === 'kn' ? 'ಪ್ರದೇಶ ವಿಶ್ಲೇಷಣೆ ಚಾಲಿಸಿ' : 'Analyse This Area'}
+              </button>
+            )}
+
+            {/* Loading */}
+            {mapAiLoading && (
+              <div className="flex flex-col items-center justify-center py-10 gap-3">
+                <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <span className="text-muted-foreground text-xs">
+                  {language === 'kn' ? 'ಗ್ರೋಕ್ ಎಐ ವಿಶ್ಲೇಷಿಸುತ್ತಿದೆ...' : 'Groq AI analysing area...'}
+                </span>
+              </div>
+            )}
+
+            {/* Error */}
+            {mapAiError && (
+              <div className="p-3 rounded bg-destructive/10 border border-destructive/30 text-destructive font-sans text-xs flex flex-col gap-2">
+                <span>{mapAiError}</span>
+                <button
+                  onClick={() => { setMapAiAnalysis(null); setMapAiError(null); }}
+                  className="self-start px-3 py-1 rounded border border-destructive/40 hover:bg-destructive/10 text-destructive text-xs font-mono"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Analysis Results */}
+            {mapAiAnalysis && !mapAiLoading && (
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {/* Summary */}
+                <div className="p-3 rounded bg-primary/5 border border-primary/20 space-y-1">
+                  <div className="text-[9px] uppercase font-bold text-primary tracking-wider">Area Summary</div>
+                  <p className="text-xs text-foreground font-sans leading-relaxed">{mapAiAnalysis.summary}</p>
+                </div>
+
+                {/* Hotspot Clusters */}
+                {mapAiAnalysis.hotspotClusters?.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Hotspot Clusters</div>
+                    {mapAiAnalysis.hotspotClusters.map((cluster: any, i: number) => (
+                      <div key={i} className="p-2.5 rounded border border-destructive/30 bg-destructive/5 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground">{cluster.area}</span>
+                          <span className="text-[9px] text-destructive font-mono">{cluster.incidentCount} incidents</span>
+                        </div>
+                        <div className="text-[10px] text-primary">{cluster.dominantCategory}</div>
+                        {cluster.tacticalAssessment && (
+                          <p className="text-[10px] text-muted-foreground font-sans">{cluster.tacticalAssessment}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Temporal Patterns */}
+                {mapAiAnalysis.temporalPatterns && (
+                  <div className="p-3 rounded bg-surface-elevated/50 border border-border space-y-1">
+                    <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Temporal Patterns</div>
+                    <p className="text-xs text-muted-foreground font-sans leading-relaxed">{mapAiAnalysis.temporalPatterns}</p>
+                  </div>
+                )}
+
+                {/* Investigative Directives */}
+                {mapAiAnalysis.investigativeDirectives?.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="text-[9px] uppercase font-bold text-foreground tracking-wider">Patrol Directives</div>
+                    {mapAiAnalysis.investigativeDirectives.map((d: string, i: number) => (
+                      <div key={i} className="flex gap-2 p-2 rounded bg-surface-elevated/40 border border-border">
+                        <span className="text-primary font-bold shrink-0">{i + 1}.</span>
+                        <span className="text-xs text-foreground font-sans">{d}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Disclaimer */}
+                {mapAiAnalysis.disclaimer && (
+                  <div className="p-2.5 rounded bg-surface-elevated/40 border border-border/50 flex gap-2">
+                    <Info className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-muted-foreground font-sans italic">{mapAiAnalysis.disclaimer}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Footer Actions */}
+            <div className="pt-3 border-t border-border flex items-center justify-between gap-2 shrink-0">
+              {mapAiAnalysis && (
+                <>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        JSON.stringify(mapAiAnalysis, null, 2)
+                      ).then(() => {
+                        setMapAiCopied(true);
+                        setTimeout(() => setMapAiCopied(false), 2000);
+                      });
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover:bg-surface-elevated text-muted-foreground hover:text-foreground text-xs transition-colors"
+                  >
+                    {mapAiCopied ? '✓ Copied' : 'Copy Analysis'}
+                  </button>
+                  <button
+                    onClick={() => { setMapAiAnalysis(null); setMapAiError(null); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-primary/40 text-primary hover:bg-primary/10 text-xs transition-colors"
+                  >
+                    <RotateCcw className="h-3 w-3" /> Re-analyse
+                  </button>
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsAiDrawerOpen(false)}
-                className="font-mono text-xs"
+                className="font-mono text-xs ml-auto"
               >
-                Close Drawer
+                Close
               </Button>
-              <Link to="/copilot">
-                <Button variant="tactical" size="sm" className="gap-1.5 font-mono text-xs">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Open AI Investigator</span>
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
 import { useTranslation } from "@/lib/i18n";
+import { exportToPDF, exportToCSV } from "@/lib/exportUtils";
 
 interface IntelligenceReport {
   id: string;
@@ -155,48 +156,33 @@ export function ReportsPage() {
     showToast("Report builder constraints cleared.", "info");
   };
 
-  // Generate and Download Real CSV
+  // Generate and Download Real RFC-4180 CSV
   const handleGenerateCSV = () => {
     if (matchingCases.length === 0) {
       showToast("No records match current scope constraints.", "error");
       return;
     }
 
-    const headers = [
-      "FIR Number",
-      "Crime Category",
-      "Priority Severity",
-      "Case Status",
-      "Police Station",
-      "District",
-      "Incident Date",
-      "Investigating Officer",
-      "Applicable Acts",
-      "Description",
-    ];
-
-    const rows = matchingCases.map((c) => [
-      `"${c.firNumber}"`,
-      `"${c.crimeCategory}"`,
-      `"${c.priority}"`,
-      `"${c.status}"`,
-      `"${c.policeStation}"`,
-      `"${c.district}"`,
-      `"${c.incidentDate}"`,
-      `"${c.investigatingOfficerName || "Unassigned"}"`,
-      `"${(c.applicableActs || []).join("; ")}"`,
-      `"${c.description.replace(/"/g, '""')}"`,
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    const filename = `kestrel-${reportTitle.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now()}.csv`;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCSV({
+      headers: [
+        "FIR Number", "Crime Category", "Priority Severity", "Case Status",
+        "Police Station", "District", "Incident Date", "Investigating Officer",
+        "Applicable Acts", "Description",
+      ],
+      rows: matchingCases.map((c) => [
+        c.firNumber,
+        c.crimeCategory,
+        c.priority,
+        c.status,
+        c.policeStation,
+        c.district,
+        c.incidentDate,
+        c.investigatingOfficerName || 'Unassigned',
+        (c.applicableActs || []).join('; '),
+        c.description,
+      ]),
+      filename: `kestrel-${reportTitle.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now()}.csv`,
+    });
 
     const newReport: IntelligenceReport = {
       id: `REP-2024-${100 + reports.length}`,
@@ -213,10 +199,10 @@ export function ReportsPage() {
     };
 
     setReports((prev) => [newReport, ...prev]);
-    showToast(`CSV Report generated: ${filename}`);
+    showToast(`CSV exported with ${matchingCases.length} records.`);
   };
 
-  // Generate and Download Real Formatted Text/HTML Printable PDF Report
+  // Generate Genuine Binary PDF Report using jsPDF
   const handleGeneratePDF = () => {
     if (matchingCases.length === 0) {
       showToast("No records match current scope constraints.", "error");
@@ -229,82 +215,25 @@ export function ReportsPage() {
       const generatedId = `REP-2024-${100 + reports.length}`;
       const genDate = new Date().toISOString().split("T")[0];
 
-      // Build structured readable HTML doc for direct printing or download
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>${generatedId} - ${reportTitle}</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; color: #111; line-height: 1.5; }
-            h1 { font-size: 20px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 2px solid #222; padding-bottom: 6px; }
-            .meta { font-size: 12px; color: #555; margin-bottom: 20px; }
-            .badge { display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: bold; background: #eee; border: 1px solid #ccc; text-transform: uppercase; }
-            .section { margin-top: 24px; }
-            .section-title { font-size: 14px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background: #f7f7f7; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="badge">OFFICIAL LAW ENFORCEMENT // RESTRICTED</div>
-          <h1>${reportTitle}</h1>
-          <div class="meta">
-            Dossier ID: <b>${generatedId}</b> | Author: <b>Insp. Sharma (Badge #KSP-4491)</b> | Generated: <b>${genDate}</b><br/>
-            Scope: Category: ${filterCategory} | District: ${filterDistrict} | Station: ${filterStation} | Priority: ${filterSeverity}
-          </div>
-
-          <div class="section">
-            <div class="section-title">Executive Overview</div>
-            <p>Intelligence briefing synthesizing <b>${matchingCases.length}</b> verified First Information Records. Includes incident progression, statutory sections applied, and operational recommendations for deployment.</p>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Case Inventory (${matchingCases.length} Records)</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>FIR Number</th>
-                  <th>Category</th>
-                  <th>Station</th>
-                  <th>Severity</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${matchingCases
-                  .map(
-                    (c) => `
-                  <tr>
-                    <td><b>${c.firNumber}</b></td>
-                    <td>${c.crimeCategory}</td>
-                    <td>${c.policeStation}</td>
-                    <td>${c.priority}</td>
-                    <td>${c.status}</td>
-                    <td>${c.incidentDate.slice(0, 10)}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </body>
-        </html>
-      `;
-
-      const blob = new Blob([htmlContent], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `kestrel-brief-${generatedId}.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      exportToPDF({
+        title: reportTitle,
+        id: generatedId,
+        classification: 'CLASSIFIED // RESTRICTED',
+        author: 'Insp. Sharma (Badge #KSP-4491)',
+        date: genDate,
+        scope: `Category: ${filterCategory} | District: ${filterDistrict} | Station: ${filterStation} | Priority: ${filterSeverity}`,
+        summaryText: `Intelligence briefing synthesizing ${matchingCases.length} verified First Information Records. Includes incident progression, statutory sections applied, and operational recommendations for deployment.`,
+        headers: ['FIR Number', 'Category', 'Station', 'Severity', 'Status', 'Date'],
+        rows: matchingCases.map((c) => [
+          c.firNumber,
+          c.crimeCategory,
+          c.policeStation,
+          c.priority,
+          c.status,
+          c.incidentDate.slice(0, 10),
+        ]),
+        filename: `kestrel-brief-${generatedId}.pdf`,
+      });
 
       const newReport: IntelligenceReport = {
         id: generatedId,
@@ -316,14 +245,14 @@ export function ReportsPage() {
         caseCount: matchingCases.length,
         status: "Finalized",
         type: "PDF",
-        summary: `Synthesized operational briefing covering ${matchingCases.length} verified First Information Records across ${filterStation !== "all" ? filterStation : "Bengaluru Metro divisions"}. Includes modus operandi analysis and patrol checkpoint recommendations.`,
+        summary: `Synthesized operational briefing covering ${matchingCases.length} verified First Information Records across ${filterStation !== "all" ? filterStation : "Bengaluru Metro divisions"}.`,
         casesData: [...matchingCases],
       };
 
       setReports((prev) => [newReport, ...prev]);
       setIsGenerating(false);
       setSelectedReport(newReport);
-      showToast(`Intelligence Brief compiled: ${generatedId}`);
+      showToast(`PDF Intelligence Brief compiled: ${generatedId}`);
     }, 600);
   };
 
