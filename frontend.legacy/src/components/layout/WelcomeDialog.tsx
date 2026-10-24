@@ -1,18 +1,20 @@
 import React from "react";
-import { Compass, Sparkles, X, ShieldAlert } from "lucide-react";
+import { Compass, Sparkles, X, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTourStore } from "@/store/useTourStore";
 import { useTranslation } from "@/lib/i18n";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 export function WelcomeDialog() {
   const { t } = useTranslation();
+  const { language, toggleLanguage } = useLanguageStore();
   const { showWelcomeDialog, startTour, skipTour, dontShowAgain } = useTourStore();
 
   if (!showWelcomeDialog) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-fade-in select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in select-none">
       <div className="w-full max-w-md rounded-xl border border-primary/40 bg-card p-6 shadow-2xl space-y-5 font-sans relative overflow-hidden">
         {/* Top Decorative Background Glow */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-primary/15 rounded-full blur-2xl pointer-events-none" />
@@ -32,13 +34,26 @@ export function WelcomeDialog() {
               </Badge>
             </div>
           </div>
-          <button
-            onClick={skipTour}
-            className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-surface-elevated/80 px-2 py-1 text-xs font-mono text-foreground hover:bg-primary/20 hover:border-primary transition-all shadow-sm"
+              title="Toggle Language (English / ಕನ್ನಡ)"
+              aria-label="Switch Language"
+            >
+              <Languages className="h-3.5 w-3.5 text-primary" />
+              <span className="font-bold text-[11px] tracking-wider uppercase text-primary">
+                {language === "en" ? "ಕನ್ನಡ" : "EN"}
+              </span>
+            </button>
+            <button
+              onClick={skipTour}
+              className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Description */}

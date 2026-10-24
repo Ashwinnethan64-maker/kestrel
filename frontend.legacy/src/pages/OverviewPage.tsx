@@ -31,8 +31,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StateView } from "@/components/ui/state-view";
 import { CrimeTrendActivityChart } from "@/components/dashboard/CrimeTrendActivityChart";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { useTranslation } from "@/lib/i18n";
 
 export function OverviewPage() {
+  const { t } = useTranslation();
   const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
@@ -129,8 +131,8 @@ export function OverviewPage() {
     <div className="space-y-5 font-mono text-xs">
       {/* A. Dashboard Header */}
       <PageHeader
-        title="Mission Control Dashboard"
-        subtitle="The command-center view surfaces current intelligence, high-priority alerts, and the next investigative actions."
+        title={t('dashboard.title')}
+        subtitle={t('dashboard.subtitle')}
         badge={
           <Badge variant="tactical" dot={true}>
             DEMO DATA // BENGALURU JURISDICTION
@@ -172,7 +174,7 @@ export function OverviewPage() {
             <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                  Total FIRs
+                  {t('dashboard.kpiTotalFirs')}
                 </span>
                 <div className="h-8 w-8 rounded bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
                   <FileText className="h-4 w-4" />
@@ -181,13 +183,13 @@ export function OverviewPage() {
               <div className="space-y-1 mt-2">
                 <div className="text-2xl font-bold text-foreground font-mono">{totalFIRs}</div>
                 <div className="text-[11px] text-muted-foreground font-sans">
-                  Chronologically registered FIR records
+                  {t('dashboard.kpiTotalFirsSub')}
                 </div>
               </div>
               <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
                 <span className="text-primary font-bold">100% Index Coverage</span>
                 <Link to="/cases" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
-                  <span>Explore</span>
+                  <span>{t('dashboard.explore')}</span>
                   <ChevronRight className="h-2.5 w-2.5" />
                 </Link>
               </div>
@@ -197,7 +199,7 @@ export function OverviewPage() {
             <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                  Active Cases
+                  {t('dashboard.kpiActiveCases')}
                 </span>
                 <div className="h-8 w-8 rounded bg-secondary/15 border border-secondary/30 flex items-center justify-center text-secondary">
                   <FolderSearch className="h-4 w-4" />
@@ -206,13 +208,13 @@ export function OverviewPage() {
               <div className="space-y-1 mt-2">
                 <div className="text-2xl font-bold text-foreground font-mono">{activeCasesCount}</div>
                 <div className="text-[11px] text-muted-foreground font-sans">
-                  Inquiries under active investigation
+                  {t('dashboard.kpiActiveCasesSub')}
                 </div>
               </div>
               <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
                 <span className="text-secondary font-bold">{criticalCount} Critical Priority</span>
                 <Link to="/cases" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
-                  <span>View Cases</span>
+                  <span>{t('dashboard.viewCases')}</span>
                   <ChevronRight className="h-2.5 w-2.5" />
                 </Link>
               </div>
@@ -222,7 +224,7 @@ export function OverviewPage() {
             <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                  Repeat Offenders
+                  {t('dashboard.kpiRepeatOffenders')}
                 </span>
                 <div className="h-8 w-8 rounded bg-destructive/15 border border-destructive/30 flex items-center justify-center text-destructive">
                   <ShieldAlert className="h-4 w-4" />
@@ -231,13 +233,13 @@ export function OverviewPage() {
               <div className="space-y-1 mt-2">
                 <div className="text-2xl font-bold text-foreground font-mono">{repeatOffendersCount}</div>
                 <div className="text-[11px] text-muted-foreground font-sans">
-                  Recidivists with prior arrest records
+                  {t('dashboard.kpiRepeatOffendersSub')}
                 </div>
               </div>
               <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
                 <span className="text-destructive font-bold">{suspects.length} Total Suspects</span>
                 <Link to="/network" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
-                  <span>Network</span>
+                  <span>{t('dashboard.network')}</span>
                   <ChevronRight className="h-2.5 w-2.5" />
                 </Link>
               </div>
@@ -247,7 +249,7 @@ export function OverviewPage() {
             <Card className="border border-border p-3.5 shadow-xs relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                  Crime Hotspots
+                  {t('dashboard.kpiHotspots')}
                 </span>
                 <div className="h-8 w-8 rounded bg-[#F2B66D]/15 border border-[#F2B66D]/30 flex items-center justify-center text-[#F2B66D]">
                   <Flame className="h-4 w-4" />
@@ -256,13 +258,13 @@ export function OverviewPage() {
               <div className="space-y-1 mt-2">
                 <div className="text-2xl font-bold text-foreground font-mono">{hotspotCount}</div>
                 <div className="text-[11px] text-muted-foreground font-sans">
-                  Active geographic station divisions
+                  {t('dashboard.kpiHotspotsSub')}
                 </div>
               </div>
               <div className="pt-2 mt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
                 <span className="text-[#F2B66D] font-bold">Bengaluru East / Central</span>
                 <Link to="/gis" className="text-muted-foreground hover:text-foreground flex items-center gap-0.5">
-                  <span>Crime Map</span>
+                  <span>{t('dashboard.crimeMap')}</span>
                   <ChevronRight className="h-2.5 w-2.5" />
                 </Link>
               </div>
@@ -283,10 +285,10 @@ export function OverviewPage() {
               <Card className="h-full border border-border shadow-xs flex flex-col justify-between">
                 <CardHeader className="py-3 px-4 border-b border-border/80 bg-sidebar/50">
                   <CardTitle className="text-xs font-mono font-bold text-foreground">
-                    Quick Actions
+                    {t('dashboard.quickActionsTitle')}
                   </CardTitle>
                   <p className="text-[11px] text-muted-foreground font-sans mt-0.5">
-                    Command directives for tactical intelligence analysis.
+                    {t('dashboard.quickActionsSubtitle')}
                   </p>
                 </CardHeader>
                 <CardContent className="p-3.5 space-y-2 flex-1 flex flex-col justify-center">
@@ -299,9 +301,9 @@ export function OverviewPage() {
                     >
                       <Sparkles className="h-4 w-4 shrink-0 text-primary-foreground" />
                       <div className="text-left">
-                        <div className="font-bold">Ask AI Investigator</div>
+                        <div className="font-bold">{t('dashboard.qaAskAi')}</div>
                         <div className="text-[10px] opacity-80 font-sans font-normal">
-                          Correlate FIR patterns & MO signatures
+                          {t('dashboard.qaAskAiSub')}
                         </div>
                       </div>
                     </Button>
@@ -316,9 +318,9 @@ export function OverviewPage() {
                     >
                       <FolderSearch className="h-4 w-4 shrink-0 text-secondary" />
                       <div className="text-left">
-                        <div className="font-bold text-foreground">Search FIR Database</div>
+                        <div className="font-bold text-foreground">{t('dashboard.qaSearchFir')}</div>
                         <div className="text-[10px] text-muted-foreground font-sans font-normal">
-                          Drill down into statutory case records
+                          {t('dashboard.qaSearchFirSub')}
                         </div>
                       </div>
                     </Button>
@@ -333,9 +335,9 @@ export function OverviewPage() {
                     >
                       <Network className="h-4 w-4 shrink-0 text-primary" />
                       <div className="text-left">
-                        <div className="font-bold text-foreground">Open Criminal Network</div>
+                        <div className="font-bold text-foreground">{t('dashboard.qaOpenNetwork')}</div>
                         <div className="text-[10px] text-muted-foreground font-sans font-normal">
-                          Graph co-accused links and syndicates
+                          {t('dashboard.qaOpenNetworkSub')}
                         </div>
                       </div>
                     </Button>
@@ -350,9 +352,9 @@ export function OverviewPage() {
                     >
                       <Download className="h-4 w-4 shrink-0 text-[#A78BFA]" />
                       <div className="text-left">
-                        <div className="font-bold text-foreground">Generate Threat Report</div>
+                        <div className="font-bold text-foreground">{t('dashboard.qaGenerateReport')}</div>
                         <div className="text-[10px] text-muted-foreground font-sans font-normal">
-                          Compile situational PDF intelligence
+                          {t('dashboard.qaGenerateReportSub')}
                         </div>
                       </div>
                     </Button>
@@ -374,11 +376,11 @@ export function OverviewPage() {
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
                     <CardTitle className="text-xs font-mono font-bold text-foreground">
-                      Recent Intelligence Alerts
+                      {t('dashboard.recentAlerts')}
                     </CardTitle>
                   </div>
                   <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
-                    3 ACTIVE ALERTS
+                    {t('dashboard.activeAlertsCount')}
                   </Badge>
                 </CardHeader>
                 <CardContent className="p-3 space-y-2">
@@ -422,11 +424,11 @@ export function OverviewPage() {
                   <div className="flex items-center gap-2">
                     <BrainCircuit className="h-4 w-4 text-primary shrink-0" />
                     <CardTitle className="text-xs font-mono font-bold text-foreground">
-                      AI Threat Insight // Modus Operandi Synthesis
+                      {t('dashboard.aiThreatInsight')}
                     </CardTitle>
                   </div>
                   <Badge variant="tactical" className="text-[9px] px-1.5 py-0">
-                    GROUNDED PATTERN
+                    {t('dashboard.groundedPattern')}
                   </Badge>
                 </CardHeader>
                 <CardContent className="p-3.5 space-y-2.5">
@@ -457,7 +459,7 @@ export function OverviewPage() {
                     <Link to="/copilot">
                       <Button variant="outline" size="sm" className="h-6 text-[10px] font-mono gap-1">
                         <Sparkles className="h-3 w-3 text-primary" />
-                        <span>Query Copilot</span>
+                        <span>{t('dashboard.queryCopilot')}</span>
                       </Button>
                     </Link>
                   </div>
@@ -472,11 +474,11 @@ export function OverviewPage() {
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-secondary shrink-0" />
                     <CardTitle className="text-xs font-mono font-bold text-foreground">
-                      Recent Case Files
+                      {t('dashboard.recentCaseFiles')}
                     </CardTitle>
                   </div>
                   <Link to="/cases" className="text-[10px] text-primary hover:underline font-mono">
-                    View All
+                    {t('dashboard.viewAll')}
                   </Link>
                 </CardHeader>
                 <CardContent className="p-3 space-y-2 flex-1">

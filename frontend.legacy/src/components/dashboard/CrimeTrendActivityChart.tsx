@@ -10,12 +10,14 @@ import {
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FIRCase } from "@kestrel/shared";
+import { useTranslation } from "@/lib/i18n";
 
 interface CrimeTrendActivityChartProps {
   cases: FIRCase[];
 }
 
 export function CrimeTrendActivityChart({ cases }: CrimeTrendActivityChartProps) {
+  const { t } = useTranslation();
   // Aggregate cases by day across the past 30 days
   const trendData = useMemo(() => {
     // Collect count per day based on incident dates
@@ -53,21 +55,21 @@ export function CrimeTrendActivityChart({ cases }: CrimeTrendActivityChartProps)
       <CardHeader className="py-3 px-4 border-b border-border/80 flex flex-row items-center justify-between shrink-0 bg-sidebar/50">
         <div>
           <CardTitle className="text-xs font-mono font-bold text-foreground">
-            Crime Trend Activity
+            {t('dashboard.trendTitle')}
           </CardTitle>
           <p className="text-[11px] text-muted-foreground font-sans mt-0.5">
-            Temporal distribution of registered First Information Reports across Bengaluru sectors.
+            {t('dashboard.trendSubtitle')}
           </p>
         </div>
         <div className="flex items-center gap-3 font-mono text-[10px]">
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-primary" /> Total ({cases.length})
+            <span className="h-2 w-2 rounded-full bg-primary" /> {t('dashboard.trendTotal')} ({cases.length})
           </span>
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="h-2 w-2 rounded-full bg-destructive" /> Critical
+            <span className="h-2 w-2 rounded-full bg-destructive" /> {t('dashboard.trendCritical')}
           </span>
           <span className="text-muted-foreground font-semibold px-1.5 py-0.5 rounded bg-surface-elevated border border-border">
-            LAST 30 DAYS
+            {t('dashboard.trendLast30')}
           </span>
         </div>
       </CardHeader>

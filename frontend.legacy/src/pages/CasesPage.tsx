@@ -1589,7 +1589,7 @@ export function CasesPage() {
                                     onClick={() => handleOpenDetail(c)}
                                     className="h-6 px-2 font-mono text-[10px] gap-1"
                                   >
-                                    <Eye className="h-3 w-3" /> Open Case
+                                    <Eye className="h-3 w-3" /> {t('cases.openCase')}
                                   </Button>
                                 </td>
                               )}

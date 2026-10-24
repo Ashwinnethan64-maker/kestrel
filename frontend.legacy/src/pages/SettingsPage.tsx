@@ -25,8 +25,10 @@ import { Modal } from "@/components/ui/modal";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
 import { useProfileStore } from "@/store/useProfileStore";
 import { apiClient } from "@/services/api/client";
+import { useTranslation } from "@/lib/i18n";
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const { isOfflineMode, setOfflineMode, triggerDataRefresh } = useInvestigationContext();
 
   const { profile, updateProfile } = useProfileStore();
@@ -144,8 +146,8 @@ export function SettingsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <PageHeader
-        title="Settings"
-        subtitle="Manage your profile, preferences, and security settings."
+        title={t("settings.title")}
+        subtitle={t("settings.subtitle")}
         badge={
           <Badge variant="tactical" dot={true}>
             OFFICER PROFILE // VERIFIED

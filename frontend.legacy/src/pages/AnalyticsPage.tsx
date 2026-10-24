@@ -52,6 +52,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { useTranslation } from "@/lib/i18n";
 
 const PALETTE = ["#D4AF37", "#63E6D2", "#69A9FF", "#F2B66D", "#F85149", "#A78BFA", "#34D399"];
 
@@ -63,6 +64,7 @@ const SAVED_VIEWS = [
 ];
 
 export function AnalyticsPage() {
+  const { t } = useTranslation();
   const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [suspects, setSuspects] = useState<AccusedSuspect[]>([]);
@@ -352,8 +354,8 @@ export function AnalyticsPage() {
     <div className="space-y-6">
       {/* 1. Page Header with Actions */}
       <PageHeader
-        title="Tactical Analytics & Crime Velocity"
-        subtitle="Multi-dimensional trend analysis, clearance rates, repeat offender recidivism indices, and station workload distribution."
+        title={t('analytics.title')}
+        subtitle={t('analytics.subtitle')}
         badge={
           <Badge variant="tactical" dot={true}>
             ANALYTICS ENGINE // RECHARTS
@@ -643,7 +645,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Total FIRs</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.totalFirs")}</span>
                   <FileText className="h-4 w-4 text-primary shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-foreground mt-0.5">{totalCases}</div>
@@ -654,7 +656,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Active Cases</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.activeCases")}</span>
                   <FolderSearch className="h-4 w-4 text-secondary shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-secondary mt-0.5">{activeCases}</div>
@@ -665,7 +667,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Solved / Cleared</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.solvedCleared")}</span>
                   <CheckCircle2 className="h-4 w-4 text-positive shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-positive mt-0.5">{solvedCases}</div>
@@ -678,7 +680,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Repeat Suspects</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.repeatSuspects")}</span>
                   <UsersRound className="h-4 w-4 text-destructive shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-destructive mt-0.5">{repeatOffendersLinked}</div>
@@ -689,7 +691,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Pending Review</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.pendingReview")}</span>
                   <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-foreground mt-0.5">{pendingCases}</div>
@@ -700,7 +702,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Avg Investigation</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.avgInvestigation")}</span>
                   <Clock3 className="h-4 w-4 text-primary shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-foreground mt-0.5">{avgInvestigationDays}d</div>
@@ -711,7 +713,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Velocity Shift</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.velocityShift")}</span>
                   <TrendingDown className="h-4 w-4 text-positive shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-positive mt-0.5">-14.2%</div>
@@ -722,7 +724,7 @@ export function AnalyticsPage() {
             <Card className="shadow-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono">Active Syndicates</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-mono">{t("analytics.activeSyndicates")}</span>
                   <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
                 </div>
                 <div className="text-xl font-bold font-mono text-destructive mt-0.5">3 Crews</div>

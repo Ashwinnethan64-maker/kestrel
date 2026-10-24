@@ -49,6 +49,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StateView } from "@/components/ui/state-view";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { useTranslation } from "@/lib/i18n";
 
 // Custom Node for React Flow
 const EntityCustomNode = ({ data, selected }: { data: any; selected?: boolean }) => {
@@ -475,12 +476,14 @@ export function NetworkPage() {
     [cases]
   );
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-3 font-mono text-xs">
       {/* 1. Page Header */}
       <PageHeader
-        title="Criminal Network"
-        subtitle="Interactive entity relationship graph uncovering co-accused syndicates, shared vehicle conduits, and repeat offender rings."
+        title={t('network.title')}
+        subtitle={t('network.subtitle')}
         badge={
           <Badge variant="tactical" dot={true}>
             RELATIONAL GRAPH ENGINE // XYFLOW
@@ -504,7 +507,7 @@ export function NetworkPage() {
               className="gap-1.5 font-mono text-xs"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>EXPORT GRAPH</span>
+              <span>{t('network.exportGraph')}</span>
             </Button>
           </div>
         }
@@ -527,7 +530,7 @@ export function NetworkPage() {
               <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search entity name, alias, FIR, plate..."
+                placeholder={t('network.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-8 pl-8 pr-2 rounded border border-border bg-surface-elevated/80 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-xs"
@@ -541,11 +544,11 @@ export function NetworkPage() {
                 onChange={(e) => setSelectedEntityType(e.target.value)}
                 className="h-8 rounded border border-border bg-surface-elevated/80 px-2 text-foreground focus:outline-none text-xs"
               >
-                <option value="all">Types: All</option>
-                <option value="suspect">Accused / Suspects</option>
-                <option value="case">FIR Case Records</option>
-                <option value="syndicate">Crime Syndicates</option>
-                <option value="vehicle">Vehicles / Assets</option>
+                <option value="all">{t('network.allEntityTypes')}</option>
+                <option value="suspect">{t('network.suspectsOnly')}</option>
+                <option value="case">{t('network.casesOnly')}</option>
+                <option value="syndicate">{t('network.syndicatesOnly')}</option>
+                <option value="vehicle">{t('network.vehiclesOnly')}</option>
               </select>
             </div>
 
@@ -592,7 +595,7 @@ export function NetworkPage() {
               title="Fit to Viewport"
             >
               <Maximize className="h-3 w-3" />
-              <span>Fit View</span>
+              <span>{t('network.fitView')}</span>
             </Button>
             <Button
               variant="outline"
@@ -602,7 +605,7 @@ export function NetworkPage() {
               title="Reset View"
             >
               <RotateCcw className="h-3 w-3" />
-              <span>Reset</span>
+              <span>{t('network.reset')}</span>
             </Button>
           </div>
         </CardContent>
@@ -616,7 +619,7 @@ export function NetworkPage() {
           </div>
           <div className="truncate">
             <div className="text-[10px] text-muted-foreground uppercase font-bold truncate">
-              Entities
+              {t('network.entities')}
             </div>
             <div className="text-sm font-bold text-foreground font-mono">{totalEntities}</div>
           </div>
@@ -628,7 +631,7 @@ export function NetworkPage() {
           </div>
           <div className="truncate">
             <div className="text-[10px] text-muted-foreground uppercase font-bold truncate">
-              Connections
+              {t('network.connections')}
             </div>
             <div className="text-sm font-bold text-foreground font-mono">{totalConnections}</div>
           </div>
@@ -640,7 +643,7 @@ export function NetworkPage() {
           </div>
           <div className="truncate">
             <div className="text-[10px] text-muted-foreground uppercase font-bold truncate">
-              Critical Risk
+              {t('network.criticalRisk')}
             </div>
             <div className="text-sm font-bold text-destructive font-mono">{criticalEntities}</div>
           </div>
@@ -652,7 +655,7 @@ export function NetworkPage() {
           </div>
           <div className="truncate">
             <div className="text-[10px] text-muted-foreground uppercase font-bold truncate">
-              Suspects
+              {t('network.suspects')}
             </div>
             <div className="text-sm font-bold text-foreground font-mono">{suspectEntities}</div>
           </div>
@@ -664,7 +667,7 @@ export function NetworkPage() {
           </div>
           <div className="truncate">
             <div className="text-[10px] text-muted-foreground uppercase font-bold truncate">
-              Active FIRs
+              {t('network.activeFirs')}
             </div>
             <div className="text-sm font-bold text-foreground font-mono">{activeFIRsCount}</div>
           </div>
@@ -676,7 +679,7 @@ export function NetworkPage() {
           </div>
           <div className="truncate">
             <div className="text-[10px] text-muted-foreground uppercase font-bold truncate">
-              Districts
+              {t('network.districts')}
             </div>
             <div className="text-sm font-bold text-foreground font-mono">{districtsCount}</div>
           </div>

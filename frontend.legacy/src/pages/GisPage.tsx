@@ -43,6 +43,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 
 // MapTiler Configuration
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || "";
@@ -140,6 +141,7 @@ function MapViewportSync({ enabled, onBoundsChange }: MapViewportSyncProps) {
 }
 
 export function GisPage() {
+  const { t } = useTranslation();
   const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -446,8 +448,8 @@ export function GisPage() {
     <div className="space-y-3">
       {/* 1. Page Header */}
       <PageHeader
-        title="Crime Map"
-        subtitle="Geospatial intelligence workspace, density clusters, and tactical patrol hotspot mapping across Karnataka and Bengaluru divisions."
+        title={t('gis.title')}
+        subtitle={t('gis.subtitle')}
         badge={
           <Badge variant="tactical" dot={true}>
             GEO TELEMETRY // MAPTILER ENGINE
@@ -550,7 +552,7 @@ export function GisPage() {
               <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-2.5 top-2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search FIR, area or station..."
+                placeholder={t('gis.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-8 pl-8 pr-2 rounded border border-border bg-surface-elevated/80 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-xs"
@@ -565,7 +567,7 @@ export function GisPage() {
                 onChange={(e) => setSelectedDistrict(e.target.value)}
                 className="h-7 bg-transparent text-foreground focus:outline-none text-xs"
               >
-                <option value="all">District: All</option>
+                <option value="all">{t('gis.districtAll')}</option>
                 {districts.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -582,7 +584,7 @@ export function GisPage() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="h-7 bg-transparent text-foreground focus:outline-none text-xs"
               >
-                <option value="all">Crime Type: All</option>
+                <option value="all">{t('gis.crimeTypeAll')}</option>
                 {categories.map((c) => (
                   <option key={c} value={c}>
                     {c}

@@ -7,14 +7,17 @@ import {
   X,
   CheckCircle2,
   Sparkles,
+  Languages,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTourStore, TOUR_STEPS } from "@/store/useTourStore";
 import { useTranslation } from "@/lib/i18n";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 export function GuidedTour() {
   const { t } = useTranslation();
+  const { language, toggleLanguage } = useLanguageStore();
   const navigate = useNavigate();
   const {
     isTourActive,
@@ -120,17 +123,17 @@ export function GuidedTour() {
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-auto">
-      {/* Semi-transparent backdrop with cutout glow */}
+      {/* Crisp translucent overlay without any heavy blur filter - preserves complete background visibility */}
       <div
-        className="fixed inset-0 bg-background/70 backdrop-blur-[2px] transition-all duration-200"
+        className="fixed inset-0 bg-black/40 transition-opacity duration-200"
         onClick={skipTour}
       />
 
-      {/* Spotlight Ring over target element */}
+      {/* Spotlight Ring over target element with crisp cutout */}
       {highlightStyle && (
         <div
           style={highlightStyle}
-          className="fixed pointer-events-none rounded-lg border-2 border-primary shadow-[0_0_24px_rgba(212,175,55,0.45)] transition-all duration-200 z-50"
+          className="fixed pointer-events-none rounded-lg border-2 border-primary shadow-[0_0_0_9999px_rgba(0,0,0,0.4),0_0_20px_rgba(212,175,55,0.6)] transition-all duration-200 z-50"
         />
       )}
 
@@ -138,9 +141,9 @@ export function GuidedTour() {
       <div
         ref={popoverRef}
         style={{ top: popoverPosition.top, left: popoverPosition.left }}
-        className="fixed z-50 w-[340px] rounded-xl border border-primary/50 bg-card p-5 shadow-2xl backdrop-blur-md animate-fade-in font-sans space-y-4"
+        className="fixed z-50 w-[340px] rounded-xl border border-primary/60 bg-card/95 p-5 shadow-2xl animate-fade-in font-sans space-y-4"
       >
-        {/* Header: Step Badge + Close */}
+        {/* Header: Step Badge + Language Toggle + Close */}
         <div className="flex items-center justify-between pb-1 border-b border-border/60">
           <div className="flex items-center gap-1.5">
             <Compass className="h-4 w-4 text-primary animate-spin-slow" />
@@ -148,13 +151,26 @@ export function GuidedTour() {
               {currentStepIndex + 1} {t("common.stepOf")} {TOUR_STEPS.length}
             </span>
           </div>
-          <button
-            onClick={skipTour}
-            className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
-            title={t("common.skip")}
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1 rounded border border-primary/40 bg-surface-elevated/80 px-2 py-0.5 text-[11px] font-mono text-foreground hover:bg-primary/20 hover:border-primary transition-all shadow-sm"
+              title="Toggle Language (English / ಕನ್ನಡ)"
+              aria-label="Switch Language"
+            >
+              <Languages className="h-3 w-3 text-primary" />
+              <span className="font-bold text-[10px] tracking-wider uppercase text-primary">
+                {language === "en" ? "ಕನ್ನಡ" : "EN"}
+              </span>
+            </button>
+            <button
+              onClick={skipTour}
+              className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
+              title={t("common.skip")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Content: Title & Clear 1-Sentence Explanation */}

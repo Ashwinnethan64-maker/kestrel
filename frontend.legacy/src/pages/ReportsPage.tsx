@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
+import { useTranslation } from "@/lib/i18n";
 
 interface IntelligenceReport {
   id: string;
@@ -92,6 +93,7 @@ const INITIAL_REPORTS: IntelligenceReport[] = [
 ];
 
 export function ReportsPage() {
+  const { t } = useTranslation();
   const { dataVersion } = useInvestigationContext();
   const [cases, setCases] = useState<FIRCase[]>([]);
   const [reports, setReports] = useState<IntelligenceReport[]>(INITIAL_REPORTS);
@@ -343,8 +345,8 @@ export function ReportsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <PageHeader
-        title="Reports & Intelligence Briefs"
-        subtitle="Configure, synthesize, and export tactical crime audits, situation briefs (SITREPs), and scope-filtered dossiers."
+        title={t("reports.title")}
+        subtitle={t("reports.subtitle")}
         badge={
           <Badge variant="tactical" dot={true}>
             REPORT ENGINE // READY
@@ -705,7 +707,7 @@ export function ReportsPage() {
             <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search dossiers by ID, title, author..."
+              placeholder={t("reports.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-8 pl-8 pr-3 rounded border border-border bg-surface-elevated/70 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-xs font-mono"
@@ -718,13 +720,13 @@ export function ReportsPage() {
             <table className="w-full text-left font-mono text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border bg-surface-elevated/50 text-muted-foreground text-[10px] uppercase tracking-wider">
-                  <th className="p-3 pl-4">Dossier ID</th>
-                  <th className="p-3">Title & Classification</th>
-                  <th className="p-3">Type</th>
-                  <th className="p-3">Author</th>
-                  <th className="p-3">Generated</th>
-                  <th className="p-3">Cases</th>
-                  <th className="p-3 pr-4 text-right">Actions</th>
+                  <th className="p-3 pl-4">{t("reports.reportId")}</th>
+                  <th className="p-3">{t("reports.reportTitle")}</th>
+                  <th className="p-3">{t("reports.category")}</th>
+                  <th className="p-3">{t("reports.author")}</th>
+                  <th className="p-3">{t("reports.date")}</th>
+                  <th className="p-3">{t("reports.status")}</th>
+                  <th className="p-3 pr-4 text-right">{t("reports.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
