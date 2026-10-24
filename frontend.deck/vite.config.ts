@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@kestrel/shared': path.resolve(__dirname, '../packages/shared/src'),
       '@shared': path.resolve(__dirname, '../packages/shared/src')
     }
   },
@@ -16,8 +17,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-charts': ['recharts'],
+          'vendor-react': ['react', 'react-dom'],
           'vendor-icons': ['lucide-react'],
         }
       }

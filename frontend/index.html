@@ -14,22 +14,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   </head>
-  <body class="bg-[#050b14] text-slate-100 antialiased selection:bg-cyan-500 selection:text-black" style="background-color: #050b14; min-height: 100vh;">
-    <div id="root">
-      <div id="boot-status" style="padding: 24px; font-family: monospace; color: #06b6d4; background: #050b14; min-height: 100vh;">
-        <h2>[KESTREL SYSTEM BOOTSTRAP]</h2>
-        <p style="color: #94a3b8;">Initializing single-surface tactical command deck...</p>
-        <div id="boot-error" style="color: #ef4444; margin-top: 16px;"></div>
-      </div>
-    </div>
-    <script>
-      window.addEventListener('error', function(e) {
-        var errEl = document.getElementById('boot-error');
-        if (errEl) {
-          errEl.innerHTML = '<h3 style="color:#ef4444">Bootstrap Error: ' + e.message + '</h3><pre style="color:#f87171;font-size:12px;">' + (e.filename || '') + ':' + (e.lineno || '') + '\n' + (e.error ? e.error.stack : '') + '</pre>';
-        }
-      });
-    </script>
+  <body class="bg-deck-deep text-slate-100 antialiased selection:bg-cyan-500 selection:text-black">
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

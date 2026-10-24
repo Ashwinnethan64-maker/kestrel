@@ -1,318 +1,468 @@
-/**
- * mockClient.ts — 100% in-memory API failover for zero-network resilience.
- * Implements the same IntelClient interface as client.ts.
- * Pre-loaded with the full curated Bengaluru crime dataset.
- */
-
-import { curatedCrimeDataset } from '@kestrel/shared';
-import type {
+import {
+  curatedCrimeDataset,
   FIRCase,
   AccusedSuspect,
-  CaseEvidence,
-  InvestigativeTask,
-  OfficerWithWorkload,
-  CopilotPromptEnvelope,
-  TaskStatus,
-  TaskType,
-  TaskPriority,
-  CaseFilterParams
+  CaseFilterParams,
+  BoundingBox,
+  NetworkTopologyPayload,
+  TacticalAnalyticsSummary,
+  ApiResponse,
+  GangTerritory,
+  SpatioTemporalDensityResponse,
+  NetworkRole,
+  SuspectCentralityMetrics,
+  NetworkCentralityResponse,
+  QueryIntentClassification,
+  SemanticCaseSearchResult,
+  CrimeSurgeResponse,
+  StationCrimeSurgeAnomaly
 } from '@kestrel/shared';
-import type { TaskFilterParams, SSEHandlers } from './client';
 
-// ── In-memory officers roster ─────────────────────────────────────────────────
-const MOCK_OFFICERS: OfficerWithWorkload[] = [
-  {
-    id: 'OFF-01', badgeNumber: 'KA-BLR-0552', name: 'Inspector Patil',
-    email: 'patil.blr@ksp.gov.in', role: 'Investigator',
-    station: 'Indiranagar', district: 'Bengaluru East',
-    activeCaseCount: 4, pendingTaskCount: 3
-  },
-  {
-    id: 'OFF-02', badgeNumber: 'KA-BLR-0331', name: 'Sub-Inspector Ramesh',
-    email: 'ramesh.krp@ksp.gov.in', role: 'Investigator',
-    station: 'K.R. Puram', district: 'Bengaluru East',
-    activeCaseCount: 2, pendingTaskCount: 2
-  },
-  {
-    id: 'OFF-03', badgeNumber: 'KA-BLR-0219', name: 'Inspector Ananya Sharma',
-    email: 'ananya.cyber@ksp.gov.in', role: 'Investigator',
-    station: 'Whitefield', district: 'Bengaluru East',
-    activeCaseCount: 3, pendingTaskCount: 1
-  },
-  {
-    id: 'OFF-04', badgeNumber: 'KA-BLR-0891', name: 'Inspector Raghavendra',
-    email: 'raghavendra.cub@ksp.gov.in', role: 'Investigator',
-    station: 'Cubbon Park', district: 'Bengaluru Central',
-    activeCaseCount: 2, pendingTaskCount: 2
-  },
-  {
-    id: 'OFF-05', badgeNumber: 'KA-BLR-0001', name: 'Dr. B. Ramesh, IPS',
-    email: 'dcp.east@ksp.gov.in', role: 'Superintendent',
-    station: 'Bengaluru East Division', district: 'Bengaluru East',
-    activeCaseCount: 11, pendingTaskCount: 8
-  }
-];
+const curatedDataset = curatedCrimeDataset;
 
-// ── Officer name → ID mapping (for case joins) ────────────────────────────────
-const OFFICER_NAME_TO_ID: Record<string, string> = {
-  'Inspector Patil': 'OFF-01',
-  'Sub-Inspector Ramesh': 'OFF-02',
-  'Inspector Ananya Sharma': 'OFF-03',
-  'Inspector Raghavendra': 'OFF-04',
-  'ACP Vikramaditya': 'OFF-05'
-};
+export class MockIntelClient {
+  private cases: FIRCase[] = (curatedDataset.cases || []) as FIRCase[];
+  private suspects: AccusedSuspect[] = (curatedDataset.suspects || []) as AccusedSuspect[];
+  private syndicates = curatedDataset.syndicates || [];
 
-// ── Build FIRCase list from curated fixture ───────────────────────────────────
-const raw = curatedCrimeDataset as any;
+  async getCases(filters?: CaseFilterParams): Promise<ApiResponse<FIRCase[]>> {
+    let result = [...this.cases];
 
-const MOCK_CASES: FIRCase[] = (raw.cases || []).map((c: any): FIRCase => ({
-  id: c.id,
-  firNumber: c.firNumber,
-  crimeCategory: c.crimeCategory,
-  priority: c.priority,
-  status: c.status,
-  incidentDate: c.incidentDate,
-  reportedDate: c.reportedDate || c.incidentDate,
-  district: c.district,
-  policeStation: c.policeStation,
-  investigatingOfficerId: OFFICER_NAME_TO_ID[c.investigatingOfficerName] ?? 'OFF-01',
-  investigatingOfficerName: c.investigatingOfficerName,
-  description: c.description,
-  descriptionKannada: c.descriptionKannada,
-  applicableActs: c.applicableActs || [],
-  latitude: c.latitude,
-  longitude: c.longitude,
-  accusedIds: c.accusedIds || [],
-  evidenceIds: c.evidenceIds || [],
-  modusOperandi: c.modusOperandi,
-  tags: c.tags,
-  createdAt: c.createdAt,
-  updatedAt: c.updatedAt
-}));
-
-// ── Build AccusedSuspect list from curated fixture ────────────────────────────
-const MOCK_ACCUSED: AccusedSuspect[] = (raw.suspects || []).map((s: any): AccusedSuspect => ({
-  id: s.id,
-  fullName: s.fullName,
-  aliases: s.aliases || [],
-  isRepeatOffender: Boolean(s.isRepeatOffender),
-  riskLevel: s.riskLevel || 'Medium',
-  gangAffiliation: s.gangAffiliation,
-  phoneNumbers: s.phoneNumbers || [],
-  knownAddresses: s.knownAddresses || [],
-  vehiclePlates: s.vehiclePlates || [],
-  primaryStation: s.primaryStation,
-  totalPriorArrests: Number(s.totalPriorArrests ?? 0),
-  bailStatus: s.bailStatus || 'None',
-  photoUrl: s.photoUrl,
-  activeCaseIds: s.activeCaseIds || [],
-  createdAt: s.createdAt || new Date().toISOString()
-}));
-
-// ── Build CaseEvidence list from curated fixture ──────────────────────────────
-const MOCK_EVIDENCE: CaseEvidence[] = (raw.evidence || []).map((e: any): CaseEvidence => ({
-  id: e.id,
-  caseId: e.caseId,
-  evidenceType: e.evidenceType,
-  title: e.title,
-  description: e.description,
-  fileUrl: e.fileUrl,
-  collectedDate: e.collectedDate,
-  chainOfCustody: e.chainOfCustody || []
-}));
-
-// ── In-memory tasks (mutable for updateTaskStatus) ────────────────────────────
-let MOCK_TASKS: InvestigativeTask[] = [
-  { id: 'TASK-001', caseId: 'CASE-2024-INDR-0102', assignedOfficerId: 'OFF-01', title: 'Obtain 12th Main Indiranagar CCTV footage from Axis Bank ATM', taskType: 'CCTV', priority: 'Critical', status: 'Completed', dueDate: '2024-03-16T12:00:00Z', completedAt: '2024-03-16T10:45:00Z', notes: 'Footage collected on USB drive and tagged as evidence EV-001.', createdAt: new Date().toISOString() },
-  { id: 'TASK-002', caseId: 'CASE-2024-INDR-0102', assignedOfficerId: 'OFF-01', title: 'Dispatch seized 7.65mm shell casings to Madiwala FSL Ballistics Division', taskType: 'Forensic', priority: 'Critical', status: 'In Progress', dueDate: '2024-03-18T18:00:00Z', notes: 'Awaiting ballistic comparison with country pistol seized in Whitefield case.', createdAt: new Date().toISOString() },
-  { id: 'TASK-003', caseId: 'CASE-2024-INDR-0102', assignedOfficerId: 'OFF-01', title: 'Record Section 180 BNSS statement of eyewitness Smt. Jayalakshmi', taskType: 'Documentation', priority: 'High', status: 'Pending', dueDate: '2024-03-19T14:00:00Z', notes: 'Witness scheduled at Indiranagar PS at 11:00 AM.', createdAt: new Date().toISOString() },
-  { id: 'TASK-004', caseId: 'CASE-2024-INDR-0102', assignedOfficerId: 'OFF-01', title: 'Execute formal seizure memo for black Bajaj Pulsar (KA-04-E-1234)', taskType: 'Seizure', priority: 'High', status: 'Completed', dueDate: '2024-03-16T16:00:00Z', completedAt: '2024-03-16T15:30:00Z', notes: 'Vehicle impounded under PF 44/2024.', createdAt: new Date().toISOString() },
-  { id: 'TASK-005', caseId: 'CASE-2024-INDR-0102', assignedOfficerId: 'OFF-01', title: 'Interrogate co-accused Deepak Kumar @ Bullet Deepu regarding firearm source', taskType: 'Interrogation', priority: 'High', status: 'Pending', dueDate: '2024-03-20T17:00:00Z', notes: 'Focus on supply trail to Kalasipalya workshop.', createdAt: new Date().toISOString() },
-  { id: 'TASK-006', caseId: 'CASE-2024-KRP-0215', assignedOfficerId: 'OFF-02', title: 'Request tower CDR dump for Old Madras Road junction during midnight heist', taskType: 'Forensic', priority: 'Critical', status: 'In Progress', dueDate: '2024-03-21T18:00:00Z', notes: 'Awaiting nodal officer response for Airtel and Jio cell IDs.', createdAt: new Date().toISOString() },
-  { id: 'TASK-007', caseId: 'CASE-2024-KRP-0215', assignedOfficerId: 'OFF-02', title: 'Raid suspected chop shop in B.Channasandra (Syed Imran residence)', taskType: 'Seizure', priority: 'High', status: 'Pending', dueDate: '2024-03-22T06:00:00Z', notes: 'Search warrant approved by ACMM court.', createdAt: new Date().toISOString() },
-  { id: 'TASK-008', caseId: 'CASE-2024-KORM-0088', assignedOfficerId: 'OFF-01', title: 'Inspect Ejipura Main Road jewellery store safe for tool-mark forensics', taskType: 'Forensic', priority: 'High', status: 'Completed', dueDate: '2024-03-14T15:00:00Z', completedAt: '2024-03-14T14:10:00Z', notes: 'Gas cutter marks matched industrial acetylene torches.', createdAt: new Date().toISOString() },
-  { id: 'TASK-009', caseId: 'CASE-2024-KORM-0088', assignedOfficerId: 'OFF-01', title: 'File proclamation warrant under Sec 84 BNSS against Manjunath @ Blade Manja', taskType: 'Documentation', priority: 'Medium', status: 'In Progress', dueDate: '2024-03-23T11:00:00Z', notes: 'Accused absconding from known Ejipura address.', createdAt: new Date().toISOString() },
-  { id: 'TASK-010', caseId: 'CASE-2024-WFD-0301', assignedOfficerId: 'OFF-03', title: 'Trace cryptocurrency wallet transactions to mule bank accounts', taskType: 'Forensic', priority: 'Critical', status: 'In Progress', dueDate: '2024-03-22T19:00:00Z', notes: 'Tether USDT outbound transfers traced to overseas exchanges.', createdAt: new Date().toISOString() },
-  { id: 'TASK-011', caseId: 'CASE-2024-WFD-0301', assignedOfficerId: 'OFF-03', title: 'Summon bank branch manager under 94 BNSS for KYC documents', taskType: 'Documentation', priority: 'High', status: 'Completed', dueDate: '2024-03-17T16:00:00Z', completedAt: '2024-03-17T15:00:00Z', notes: 'KYC verified fraudulent identities with forged Aadhaar cards.', createdAt: new Date().toISOString() },
-  { id: 'TASK-012', caseId: 'CASE-2024-WFD-0301', assignedOfficerId: 'OFF-03', title: 'Execute freeze order under Sec 106 BNSS on 4 mule ICICI accounts', taskType: 'Seizure', priority: 'Critical', status: 'Completed', dueDate: '2024-03-18T10:00:00Z', completedAt: '2024-03-18T09:30:00Z', notes: 'INR 18,50,000 successfully lien-marked.', createdAt: new Date().toISOString() },
-  { id: 'TASK-013', caseId: 'CASE-2024-CUB-0044', assignedOfficerId: 'OFF-04', title: 'Retrieve Lavelle Road traffic junction PTZ camera recordings', taskType: 'CCTV', priority: 'High', status: 'Completed', dueDate: '2024-03-15T18:00:00Z', completedAt: '2024-03-15T17:20:00Z', notes: 'Getaway vehicle Honda City (KA-03-Z-8899) identified.', createdAt: new Date().toISOString() },
-  { id: 'TASK-014', caseId: 'CASE-2024-CUB-0044', assignedOfficerId: 'OFF-04', title: 'Conduct interrogation of Kiran Gowda @ Shadow at Central Prison Parappana Agrahara', taskType: 'Interrogation', priority: 'Critical', status: 'In Progress', dueDate: '2024-03-21T15:00:00Z', notes: 'Body warrant obtained from 1st ACMM Court.', createdAt: new Date().toISOString() },
-  { id: 'TASK-015', caseId: 'CASE-2024-CUB-0044', assignedOfficerId: 'OFF-04', title: 'Draft statutory charge-sheet for Section 305 / 331(4) BNS violations', taskType: 'Documentation', priority: 'Medium', status: 'Pending', dueDate: '2024-03-25T17:00:00Z', notes: 'Review draft with Assistant Public Prosecutor.', createdAt: new Date().toISOString() }
-];
-
-// ── Copilot simulated streaming responses ─────────────────────────────────────
-const MOCK_COPILOT_RESPONSES: Record<string, string[]> = {
-  default_en: [
-    'Based on the ', 'operational intelligence ', 'available in the Kestrel ', 'database, here is my ', 'tactical assessment:\n\n',
-    'The **East Ring Vehicle & Heist Syndicate** ', 'remains the highest-priority ', 'threat in Bengaluru East. ', 'FIR-2024-INDR-0102 (Armed Robbery) ', 'is the lead case.\n\n',
-    'Recommended immediate actions:\n', '1. **Ballistics FSL** — dispatch ', 'shell casings to Madiwala lab.\n', '2. **CDR Analysis** — ', 'tower dump for Old Madras Road.\n', '3. **Witness Statement** — ', 'Sec 180 BNSS recording for Smt. Jayalakshmi.\n\n',
-    'Stay tactical. ', '— KESTREL Copilot'
-  ],
-  default_kn: [
-    'ಕೆಸ್ಟ್ರೆಲ್ ಗುಪ್ತಚರ ಮಾಹಿತಿ ', 'ವಿಶ್ಲೇಷಣೆಯಂತೆ:\n\n',
-    '**FIR-2024-INDR-0102** ', '(ಸಶಸ್ತ್ರ ದರೋಡೆ) ', 'ಪ್ರಕರಣದಲ್ಲಿ ಆರೋಪಿ ರಾಜು ನಾಯಕ್ ', 'ಹಿಂದಿನ 6 ಪ್ರಕರಣಗಳಲ್ಲಿ ಭಾಗಿಯಾಗಿದ್ದಾನೆ.\n\n',
-    'ಪ್ರಮುಖ ಕ್ರಮಗಳು:\n', '1. **BNSS ಸೆಕ್ಷನ್ 480** ರ ಅಡಿಯಲ್ಲಿ ಜಾಮೀನು ವಿರೋಧಿಸುವುದು.\n', '2. ಮಡಿವಾಳ FSL ಬ್ಯಾಲಿಸ್ಟಿಕ್ಸ್ ವರದಿ ಪಡೆಯುವುದು.\n', '3. ಕಾಲ್ ಡಂಪ್ ದಾಖಲೆಗಳ ಪರಿಶೀಲನೆ.\n\n',
-    '— ಕೆಸ್ಟ್ರೆಲ್ ಪೊಲೀಸ್ ಸಹಾಯಕ'
-  ],
-  bail_opposition: [
-    '### GROUNDS FOR OPPOSING REGULAR BAIL\n',
-    '**Under Section 480 Bharatiya Nagarik Suraksha Sanhita (BNSS 2023) / Sec 437 CrPC**\n\n',
-    '1. **Recidivism Risk & Habitual Offender Profile**:\n',
-    '   - Accused **Raju Nayak @ Snake Raju** has 6 prior recorded arrests across Indiranagar, K.R. Puram, and Koramangala PS.\n',
-    '   - Active syndicate leader of the *East Ring Vehicle & Heist Syndicate*.\n\n',
-    '2. **Witness Intimidation & Flight Risk**:\n',
-    '   - Complainant Smt. Jayalakshmi has identified the accused in the spot memo.\n',
-    '   - Previous absconding record under Section 84 BNSS in Koramangala jewelry case.\n\n',
-    '3. **Heinous Gravity & Statutory Limits**:\n',
-    '   - Offence committed with country-made firearm under Section 311 / 109 BNS (punishable up to Life Imprisonment).\n',
-    '   - Statutory charge-sheet is within the 90-day period under Section 187 BNSS (elapsed: 42 days).\n\n',
-    '**Conclusion**: Bail may strictly be rejected in the interest of public safety and recovery of remaining stolen bullion.'
-  ],
-  witness_inconsistencies: [
-    '### WITNESS & EVIDENCE INCONSISTENCY ANALYSIS\n',
-    '**Cross-referencing FIR-2024-INDR-0102 Statements**:\n\n',
-    '- **Timestamp Discrepancy**: Complainant statement states robbery occurred at **22:15 hrs**. However, Axis Bank ATM CCTV (EV-001) logs getaway vehicle departure at **21:52 hrs** (23-minute discrepancy).\n',
-    '- **Weapon Description**: Eyewitness mentioned a "silver revolver", whereas recovered shell casings (EV-002) are 7.65mm semi-automatic pistol rounds.\n',
-    '- **Recommended Follow-up**: Re-examine complainant under Section 180(3) BNSS regarding exact sequence of entry and exit.'
-  ]
-};
-
-// ── Simulated SSE stream ──────────────────────────────────────────────────────
-function simulateStream(
-  envelope: CopilotPromptEnvelope,
-  handlers: SSEHandlers
-): AbortController {
-  const controller = new AbortController();
-  const q = envelope.query.toLowerCase();
-
-  let tokens = MOCK_COPILOT_RESPONSES.default_en;
-  if (envelope.language === 'kn' || q.includes('kannada') || q.includes('ಕನ್ನಡ')) {
-    tokens = MOCK_COPILOT_RESPONSES.default_kn;
-  } else if (q.includes('bail') || q.includes('oppose')) {
-    tokens = MOCK_COPILOT_RESPONSES.bail_opposition;
-  } else if (q.includes('witness') || q.includes('inconsist') || q.includes('discrepanc')) {
-    tokens = MOCK_COPILOT_RESPONSES.witness_inconsistencies;
-  }
-
-  let idx = 0;
-  const interval = setInterval(() => {
-    if (controller.signal.aborted || idx >= tokens.length) {
-      clearInterval(interval);
-      if (!controller.signal.aborted) {
-        // Send citations based on focused case or defaults
-        const firs = envelope.focusedCaseId
-          ? [envelope.focusedCaseId]
-          : ['FIR-2024-INDR-0102', 'FIR-2024-KRP-0215', 'FIR-2024-KORM-0088'];
-        handlers.onCitation(firs);
-        handlers.onDone();
-      }
-      return;
+    if (filters?.policeStation) {
+      result = result.filter((c) => c.policeStation.toLowerCase() === filters.policeStation?.toLowerCase());
     }
-    handlers.onToken(tokens[idx++]);
-  }, 40);
-
-  return controller;
-}
-
-// ── Mock Client ───────────────────────────────────────────────────────────────
-export const mockClient = {
-  getCases: (params: CaseFilterParams = {}): Promise<FIRCase[]> => {
-    let results = [...MOCK_CASES];
-
-    if (params.investigatingOfficerId) {
-      results = results.filter(c => c.investigatingOfficerId === params.investigatingOfficerId);
+    if (filters?.crimeCategory) {
+      result = result.filter((c) => c.crimeCategory.toLowerCase().includes(filters.crimeCategory!.toLowerCase()));
     }
-    if (params.status) {
-      results = results.filter(c => c.status === params.status);
+    if (filters?.priority) {
+      result = result.filter((c) => c.priority === filters.priority);
     }
-    if (params.priority) {
-      results = results.filter(c => c.priority === params.priority);
+    if (filters?.status) {
+      result = result.filter((c) => c.status === filters.status);
     }
-    if (params.district) {
-      results = results.filter(c => c.district.toLowerCase().includes(params.district!.toLowerCase()));
-    }
-    if (params.policeStation) {
-      results = results.filter(c => c.policeStation.toLowerCase().includes(params.policeStation!.toLowerCase()));
-    }
-    if (params.crimeCategory) {
-      results = results.filter(c => c.crimeCategory.toLowerCase().includes(params.crimeCategory!.toLowerCase()));
-    }
-    if (params.searchQuery) {
-      const q = params.searchQuery.toLowerCase();
-      results = results.filter(c =>
-        c.firNumber.toLowerCase().includes(q) ||
-        c.description.toLowerCase().includes(q) ||
-        c.crimeCategory.toLowerCase().includes(q)
+    if (filters?.searchQuery) {
+      const q = filters.searchQuery.toLowerCase();
+      result = result.filter(
+        (c) =>
+          c.firNumber.toLowerCase().includes(q) ||
+          c.description.toLowerCase().includes(q) ||
+          c.applicableActs.some((a) => a.toLowerCase().includes(q))
       );
     }
 
-    return Promise.resolve(results);
-  },
-
-  getCaseById: (id: string): Promise<FIRCase | null> => {
-    const c = MOCK_CASES.find(x => x.id === id || x.firNumber === id) ?? null;
-    return Promise.resolve(c);
-  },
-
-  getOfficers: (): Promise<OfficerWithWorkload[]> =>
-    Promise.resolve([...MOCK_OFFICERS]),
-
-  getTasks: (params: TaskFilterParams = {}): Promise<InvestigativeTask[]> => {
-    let results = [...MOCK_TASKS];
-    if (params.caseId) results = results.filter(t => t.caseId === params.caseId);
-    if (params.officerId) results = results.filter(t => t.assignedOfficerId === params.officerId);
-    if (params.status) results = results.filter(t => t.status === params.status);
-    if (params.priority) results = results.filter(t => t.priority === params.priority);
-    return Promise.resolve(results);
-  },
-
-  updateTaskStatus: (
-    id: string,
-    status: TaskStatus,
-    notes?: string
-  ): Promise<InvestigativeTask> => {
-    const idx = MOCK_TASKS.findIndex(t => t.id === id);
-    if (idx === -1) return Promise.reject(new Error(`Task ${id} not found`));
-
-    MOCK_TASKS[idx] = {
-      ...MOCK_TASKS[idx],
-      status,
-      notes: notes ?? MOCK_TASKS[idx].notes,
-      completedAt: status === 'Completed' ? new Date().toISOString() : null
+    return {
+      success: true,
+      data: result,
+      meta: {
+        total: result.length,
+        timestamp: new Date().toISOString()
+      }
     };
-    return Promise.resolve(MOCK_TASKS[idx]);
-  },
+  }
 
-  createTask: (
-    task: Omit<InvestigativeTask, 'id' | 'createdAt'>
-  ): Promise<InvestigativeTask> => {
-    const newTask: InvestigativeTask = {
-      ...task,
-      id: `TASK-${Date.now().toString().slice(-4)}`,
-      createdAt: new Date().toISOString()
+  async getCaseById(id: string): Promise<ApiResponse<FIRCase | null>> {
+    const found = this.cases.find((c) => c.id === id || c.firNumber === id) || null;
+    return {
+      success: !!found,
+      data: found,
+      meta: { timestamp: new Date().toISOString() }
     };
-    MOCK_TASKS.unshift(newTask);
-    return Promise.resolve(newTask);
-  },
+  }
 
-  getAccused: (id: string): Promise<AccusedSuspect | null> => {
-    const s = MOCK_ACCUSED.find(x => x.id === id) ?? null;
-    return Promise.resolve(s);
-  },
+  async createCase(newCase: Omit<FIRCase, 'id' | 'createdAt' | 'updatedAt'> & Partial<Pick<FIRCase, 'id'>>): Promise<ApiResponse<FIRCase>> {
+    const id = newCase.id || `CASE-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+    const createdRecord: FIRCase = {
+      ...newCase,
+      id,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    this.cases.unshift(createdRecord);
+    return {
+      success: true,
+      data: createdRecord,
+      meta: { timestamp }
+    };
+  }
 
-  getSuspects: (): Promise<AccusedSuspect[]> =>
-    Promise.resolve([...MOCK_ACCUSED]),
+  async getEvidenceByCaseId(caseId: string): Promise<ApiResponse<any[]>> {
+    const evidenceList = (curatedDataset as any).evidence || [];
+    const filtered = evidenceList.filter((e: any) => e.caseId === caseId);
+    return {
+      success: true,
+      data: filtered,
+      meta: { total: filtered.length, timestamp: new Date().toISOString() }
+    };
+  }
 
-  getEvidence: (caseId: string): Promise<CaseEvidence[]> =>
-    Promise.resolve(MOCK_EVIDENCE.filter(e => e.caseId === caseId)),
+  async getAccused(searchQuery?: string): Promise<ApiResponse<AccusedSuspect[]>> {
+    let result = [...this.suspects];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.fullName.toLowerCase().includes(q) ||
+          s.aliases.some((a) => a.toLowerCase().includes(q)) ||
+          s.gangAffiliation?.toLowerCase().includes(q)
+      );
+    }
+    return {
+      success: true,
+      data: result,
+      meta: { total: result.length, timestamp: new Date().toISOString() }
+    };
+  }
 
-  getSyndicates: (): Promise<any[]> =>
-    Promise.resolve((curatedCrimeDataset as any).syndicates || []),
+  async getSpatialIncidents(bounds?: BoundingBox | null): Promise<ApiResponse<FIRCase[]>> {
+    let result = [...this.cases];
+    if (bounds) {
+      const [[south, west], [north, east]] = bounds;
+      result = result.filter(
+        (c) => c.latitude >= south && c.latitude <= north && c.longitude >= west && c.longitude <= east
+      );
+    }
+    return {
+      success: true,
+      data: result,
+      meta: { total: result.length, timestamp: new Date().toISOString() }
+    };
+  }
 
-  streamCopilotQuery: (
-    envelope: CopilotPromptEnvelope,
-    handlers: SSEHandlers
-  ): AbortController => simulateStream(envelope, handlers)
-};
+  async getNetworkTopology(focusedSuspectId?: string | null): Promise<ApiResponse<NetworkTopologyPayload>> {
+    const nodes = this.suspects.map((s) => ({
+      id: s.id,
+      type: 'suspect' as const,
+      label: s.fullName,
+      subLabel: s.aliases[0] || s.gangAffiliation,
+      severity: s.riskLevel,
+      riskScore: s.totalPriorArrests * 15,
+      data: { ...s }
+    }));
 
-export type MockIntelClient = typeof mockClient;
+    const edges = [
+      { id: 'E-01', source: 'SUSP-001', target: 'SUSP-002', relation: 'CO_ACCUSED_WITH' as const, weight: 3, animated: true },
+      { id: 'E-02', source: 'SUSP-001', target: 'SUSP-003', relation: 'CO_ACCUSED_WITH' as const, weight: 2, animated: true },
+      { id: 'E-03', source: 'SUSP-001', target: 'SUSP-004', relation: 'CO_ACCUSED_WITH' as const, weight: 1, animated: false },
+      { id: 'E-04', source: 'SUSP-005', target: 'SUSP-006', relation: 'CO_ACCUSED_WITH' as const, weight: 2, animated: true },
+      { id: 'E-05', source: 'SUSP-005', target: 'SUSP-007', relation: 'CO_ACCUSED_WITH' as const, weight: 2, animated: true },
+      { id: 'E-06', source: 'SUSP-008', target: 'SUSP-009', relation: 'CO_ACCUSED_WITH' as const, weight: 3, animated: true },
+      { id: 'E-07', source: 'SUSP-008', target: 'SUSP-010', relation: 'CO_ACCUSED_WITH' as const, weight: 1, animated: false }
+    ];
+
+    return {
+      success: true,
+      data: {
+        nodes,
+        edges,
+        syndicates: this.syndicates as any
+      },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getTacticalAnalytics(): Promise<ApiResponse<TacticalAnalyticsSummary>> {
+    return {
+      success: true,
+      data: {
+        incidentVelocity30DayChangePercent: -14.2,
+        recidivismIndexPercent: 38.5,
+        openCriticalCases: 3,
+        activeSyndicatesCount: this.syndicates.length,
+        stationClearanceRates: [
+          { station: 'Indiranagar', total: 18, cleared: 14, ratePercent: 77.7 },
+          { station: 'K.R. Puram', total: 24, cleared: 16, ratePercent: 66.6 },
+          { station: 'Whitefield', total: 31, cleared: 22, ratePercent: 70.9 },
+          { station: 'Cubbon Park', total: 12, cleared: 10, ratePercent: 83.3 }
+        ],
+        detectedSurges: [
+          {
+            station: 'K.R. Puram',
+            district: 'Bengaluru East',
+            current7DayCount: 12,
+            prior7DayCount: 5,
+            surgePercent: 140.0,
+            dominantCategory: 'Narcotics Trafficking',
+            dominantCategoryCount: 4,
+            severity: 'Critical',
+            tacticalRecommendation: 'Coordinate with Central Crime Branch (CCB) narcotics squad for targeted cordon-and-search operations at identified distribution nodes in K.R. Puram.',
+            detectedAt: new Date().toISOString()
+          },
+          {
+            station: 'Yeshwanthpur',
+            district: 'Bengaluru North',
+            current7DayCount: 12,
+            prior7DayCount: 7,
+            surgePercent: 71.4,
+            dominantCategory: 'Vehicle Theft',
+            dominantCategoryCount: 4,
+            severity: 'High',
+            tacticalRecommendation: 'Increase motorcycle patrol frequency and set up automated ANPR vehicle surveillance along primary transit routes in Yeshwanthpur.',
+            detectedAt: new Date().toISOString()
+          },
+          {
+            station: 'Ulsoor',
+            district: 'Bengaluru Central',
+            current7DayCount: 8,
+            prior7DayCount: 5,
+            surgePercent: 60.0,
+            dominantCategory: 'Armed Robbery',
+            dominantCategoryCount: 3,
+            severity: 'High',
+            tacticalRecommendation: 'Activate armed quick-reaction team (QRT) checkpoints and night perimeter patrols around high-risk commercial avenues in Ulsoor.',
+            detectedAt: new Date().toISOString()
+          }
+        ]
+      },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getGangTerritories(gang?: string): Promise<ApiResponse<GangTerritory[]>> {
+    const syndicates = this.syndicates || [];
+    const territories: GangTerritory[] = syndicates.map((s: any) => {
+      const center = s.operatingZones?.[0]?.center || { latitude: 12.9716, longitude: 77.5946 };
+      const d = 0.015;
+      return {
+        gangAffiliation: s.name,
+        caseCount: s.linkedCaseFirs?.length || 5,
+        suspectCount: s.suspectIds?.length || 3,
+        areaSqKm: Math.round((Math.PI * Math.pow(s.operatingZones?.[0]?.radiusMeters || 3000, 2) / 1000000) * 100) / 100,
+        centroid: center,
+        dominantCategory: s.primaryCrime || 'Organized Burglary',
+        threatLevel: (s.threatLevel || 'High') as any,
+        geojson: {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [[
+              [center.longitude - d, center.latitude - d],
+              [center.longitude + d, center.latitude - d],
+              [center.longitude + d, center.latitude + d],
+              [center.longitude - d, center.latitude + d],
+              [center.longitude - d, center.latitude - d]
+            ]]
+          },
+          properties: {
+            gangAffiliation: s.name,
+            threatLevel: s.threatLevel
+          }
+        }
+      };
+    });
+
+    const filtered = gang 
+      ? territories.filter((t) => t.gangAffiliation.toLowerCase().includes(gang.toLowerCase()))
+      : territories;
+
+    return {
+      success: true,
+      data: filtered,
+      meta: { total: filtered.length, timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getSpatialDensity(): Promise<ApiResponse<SpatioTemporalDensityResponse>> {
+    const grid = [
+      { cellId: 'CELL-1', latitude: 12.9784, longitude: 77.6408, totalIncidents: 28, criticalCount: 6, dominantCategory: 'Armed Robbery', densityWeight: 1.0 },
+      { cellId: 'CELL-2', latitude: 12.9352, longitude: 77.6245, totalIncidents: 24, criticalCount: 4, dominantCategory: 'House Burglary', densityWeight: 0.85 },
+      { cellId: 'CELL-3', latitude: 12.9698, longitude: 77.7500, totalIncidents: 21, criticalCount: 8, dominantCategory: 'Cyber Fraud', densityWeight: 0.75 },
+      { cellId: 'CELL-4', latitude: 13.0075, longitude: 77.6959, totalIncidents: 16, criticalCount: 3, dominantCategory: 'Vehicle Theft', densityWeight: 0.57 }
+    ];
+
+    const temporalMatrix = [];
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        temporalMatrix.push({
+          dayOfWeek: d,
+          hourOfDay: h,
+          incidentCount: (h >= 1 && h <= 4) || (h >= 20 && h <= 23) ? 12 : 3
+        });
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        grid,
+        temporalMatrix,
+        peakWindow: {
+          dayOfWeek: 6,
+          hourOfDay: 21,
+          incidentCount: 29,
+          description: 'Saturday around 21:00 hrs (29 active cases)'
+        },
+        hotspots: [
+          {
+            id: 'HOTSPOT-1',
+            stationName: 'Indiranagar Sector 1',
+            district: 'Bengaluru East',
+            center: { latitude: 12.9784, longitude: 77.6408 },
+            radiusMeters: 600,
+            incidentCount: 28,
+            dominantCrime: 'Armed Robbery',
+            riskScore: 100
+          }
+        ]
+      },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getNetworkCentrality(filters?: { role?: string; minDegree?: number; limit?: number }): Promise<ApiResponse<NetworkCentralityResponse>> {
+    const list: SuspectCentralityMetrics[] = this.suspects.map((s, idx) => {
+      const priors = parseInt(String(s.totalPriorArrests || '0'), 10);
+      const isRepeat = Boolean(s.isRepeatOffender);
+      const degree = (idx % 5) * 4 + 3;
+      const criticalCases = (idx % 3) * 2;
+      const totalCases = 4 + degree;
+      const risk = Math.min(100, priors * 8 + (isRepeat ? 15 : 0) + Math.round(degree * 1.2) + criticalCases * 5);
+      
+      let role: NetworkRole = 'Associate';
+      if (criticalCases >= 4 && degree >= 15) role = 'Kingpin';
+      else if (degree >= 16) role = 'Broker';
+      else if (criticalCases >= 3 && isRepeat) role = 'Enforcer';
+
+      return {
+        suspectId: s.id,
+        fullName: s.fullName,
+        aliases: s.aliases || [],
+        gangAffiliation: s.gangAffiliation,
+        degreeCentrality: degree,
+        normalizedDegree: Math.round((degree / 25) * 100) / 100,
+        pagerankScore: Math.round((degree / 25 * 0.7 + (criticalCases / 10) * 0.3) * 100) / 100,
+        totalCases,
+        criticalCasesCount: criticalCases,
+        priorArrests: priors,
+        isRepeatOffender: isRepeat,
+        compositeRiskScore: risk,
+        networkRole: role,
+        topCoAccused: []
+      };
+    });
+
+    list.sort((a, b) => b.compositeRiskScore - a.compositeRiskScore);
+
+    let filtered = list;
+    if (filters?.role) {
+      filtered = filtered.filter(s => s.networkRole.toLowerCase() === filters.role?.toLowerCase());
+    }
+    if (filters?.minDegree) {
+      filtered = filtered.filter(s => s.degreeCentrality >= filters.minDegree!);
+    }
+    if (filters?.limit) {
+      filtered = filtered.slice(0, filters.limit);
+    }
+
+    return {
+      success: true,
+      data: {
+        suspects: filtered,
+        summary: {
+          totalSuspectsAnalyzed: list.length,
+          kingpinCount: list.filter(s => s.networkRole === 'Kingpin').length,
+          brokerCount: list.filter(s => s.networkRole === 'Broker').length,
+          enforcerCount: list.filter(s => s.networkRole === 'Enforcer').length,
+          associateCount: list.filter(s => s.networkRole === 'Associate').length,
+          averageRiskScore: 68
+        }
+      },
+      meta: { total: filtered.length, timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getSuspectCentralityMetrics(suspectId: string): Promise<ApiResponse<SuspectCentralityMetrics & { networkRank: number }>> {
+    const all = await this.getNetworkCentrality();
+    const index = all.data.suspects.findIndex(s => s.suspectId === suspectId);
+    const found = all.data.suspects[index] || all.data.suspects[0];
+    return {
+      success: !!found,
+      data: { ...found, networkRank: index >= 0 ? index + 1 : 1 },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
+
+  async classifyIntent(query: string, context?: Record<string, unknown>): Promise<ApiResponse<QueryIntentClassification>> {
+    const lower = query.toLowerCase();
+    let station: string | undefined;
+    if (lower.includes('indiranagar')) station = 'Indiranagar';
+    else if (lower.includes('koramangala')) station = 'Koramangala';
+    else if (lower.includes('whitefield')) station = 'Whitefield';
+
+    let category: string | undefined;
+    if (lower.includes('robbery')) category = 'Armed Robbery';
+    else if (lower.includes('theft')) category = 'Vehicle Theft';
+    else if (lower.includes('snatching')) category = 'Chain Snatching';
+
+    const isNarrative = lower.includes('crowbar') || lower.includes('shutter') || lower.includes('bike') || query.split(/\s+/).length > 6;
+    const hasFilters = Boolean(station || category);
+
+    return {
+      success: true,
+      data: {
+        intent: hasFilters && isNarrative ? 'HYBRID' : isNarrative ? 'SEMANTIC_VECTOR' : 'STRUCTURED_SQL',
+        confidence: 0.92,
+        entities: { policeStation: station, crimeCategory: category },
+        semanticSearchText: query,
+        reasoning: 'Classified in mock service'
+      },
+      meta: { timestamp: new Date().toISOString() }
+    };
+  }
+
+  async searchCasesBySemanticMO(query: string, limit: number = 5): Promise<ApiResponse<SemanticCaseSearchResult[]>> {
+    const lower = query.toLowerCase();
+    const words = lower.split(/\s+/).filter(w => w.length > 2);
+
+    const scored = this.cases.map(c => {
+      let score = 0.5;
+      const desc = (c.description || '').toLowerCase();
+      for (const w of words) {
+        if (desc.includes(w)) score += 0.15;
+      }
+      return {
+        id: c.id,
+        firNumber: c.firNumber,
+        crimeCategory: c.crimeCategory,
+        policeStation: c.policeStation,
+        district: c.district,
+        priority: c.priority,
+        status: c.status,
+        incidentDate: c.incidentDate,
+        description: c.description,
+        descriptionKannada: c.descriptionKannada || null,
+        similarityScore: Math.min(0.98, Math.round(score * 100) / 100),
+        accusedNames: []
+      };
+    });
+
+    scored.sort((a, b) => b.similarityScore - a.similarityScore);
+    const results = scored.slice(0, limit);
+
+    return {
+      success: true,
+      data: results,
+      meta: { total: results.length, timestamp: new Date().toISOString() }
+    };
+  }
+
+  async getCrimeSurges(threshold: number = 40.0, windowDays: number = 7): Promise<ApiResponse<CrimeSurgeResponse>> {
+    const analytics = await this.getTacticalAnalytics();
+    const anomalies = (analytics.data.detectedSurges || []).filter(a => a.surgePercent >= threshold);
+
+    return {
+      success: true,
+      data: {
+        anomalies,
+        analysisWindowDays: windowDays,
+        thresholdPercent: threshold,
+        anchorDate: new Date().toISOString()
+      },
+      meta: { total: anomalies.length, timestamp: new Date().toISOString() }
+    };
+  }
+}
+
+export const mockClient = new MockIntelClient();
+
+
