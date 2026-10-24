@@ -14,6 +14,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   ChevronDown,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +22,10 @@ import { StatusIndicator } from "@/components/ui/status-indicator";
 import { useInvestigationContext } from "@/store/useInvestigationContext";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "@/lib/i18n";
 import { apiClient } from "@/services/api/client";
+import { HelpModal } from "./HelpModal";
 
 interface TopbarProps {
   onOpenMobileSidebar: () => void;
@@ -43,6 +46,7 @@ export function Topbar({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isRetryingLive, setIsRetryingLive] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -268,8 +272,18 @@ export function Topbar({
           )}
         </div>
 
+        {/* Help & Tour Trigger */}
+        <button
+          onClick={() => setHelpOpen(true)}
+          className="flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-elevated/70 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+          title={t("common.help")}
+          aria-label="Open Guidance and Help"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </button>
+
         {/* User Account / Profile Menu Dropdown */}
-        <div className="relative ml-1" ref={menuRef}>
+        <div className="relative ml-1" ref={menuRef} id="tour-user-menu">
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className="flex items-center gap-2 rounded-md border border-border bg-surface-elevated px-2.5 py-1 text-xs text-foreground hover:border-primary/50 transition-colors group"
@@ -369,7 +383,8 @@ export function Topbar({
               <button
                 onClick={() => {
                   setShowSignOutConfirm(false);
-                  navigate("/overview");
+                  useAuthStore.getState().logout();
+                  navigate("/login");
                 }}
                 className="px-4 py-2 rounded text-xs font-semibold bg-destructive hover:bg-destructive/90 text-white transition-colors"
               >
@@ -379,6 +394,9 @@ export function Topbar({
           </div>
         </div>
       )}
+
+      {/* Interactive Guidance & Help Modal */}
+      <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
     </header>
   );
 }

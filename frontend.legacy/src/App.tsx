@@ -1,9 +1,11 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { Skeleton } from "./components/ui/skeleton";
+import { useAuthStore } from "./store/useAuthStore";
 
-// Lazy-load feature pages for optimized bundle loading and fast initial render
+// Lazy-load feature pages
+const LoginPage = lazy(() => import("./pages/LoginPage").then(m => ({ default: m.LoginPage })));
 const OverviewPage = lazy(() => import("./pages/OverviewPage").then(m => ({ default: m.OverviewPage })));
 const CasesPage = lazy(() => import("./pages/CasesPage").then(m => ({ default: m.CasesPage })));
 const NetworkPage = lazy(() => import("./pages/NetworkPage").then(m => ({ default: m.NetworkPage })));
@@ -29,11 +31,39 @@ function RouteLoadingFallback() {
   );
 }
 
+// Protected Route Guard
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthStore();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return <>{children}</>;
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppLayout />}>
+        {/* Public Login Route */}
+        <Route
+          path="/login"
+          element={
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <LoginPage />
+            </Suspense>
+          }
+        />
+
+        {/* Protected Application Shell */}
+        <Route
+          element={
+            <RequireAuth>
+              <AppLayout />
+            </RequireAuth>
+          }
+        >
           <Route path="/" element={<Navigate to="/overview" replace />} />
           <Route
             path="/overview"

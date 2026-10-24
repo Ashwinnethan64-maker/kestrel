@@ -84,6 +84,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
         onMouseLeave={handleItemMouseLeave}
       >
         <NavLink
+          id={`tour-nav-${item.id}`}
           to={item.path}
           onClick={onCloseMobile}
           className={({ isActive }) =>

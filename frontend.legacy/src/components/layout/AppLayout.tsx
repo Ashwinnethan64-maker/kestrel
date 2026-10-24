@@ -3,6 +3,8 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { CommandPalette } from "./CommandPalette";
+import { GuidedTour } from "./GuidedTour";
+import { WelcomeDialog } from "./WelcomeDialog";
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -10,6 +12,12 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-sans">
+      {/* Onboarding Welcome Dialog */}
+      <WelcomeDialog />
+
+      {/* Interactive Step-by-Step Guided Tour */}
+      <GuidedTour />
+
       {/* Sidebar Navigation - Fixed 64px Rail */}
       <Sidebar
         mobileOpen={mobileOpen}
