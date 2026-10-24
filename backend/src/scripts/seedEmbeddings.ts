@@ -2,6 +2,10 @@ import { db } from '../db';
 import { casesFir } from '../db/schema';
 import { sql, isNull } from 'drizzle-orm';
 import { generateEmbedding, formatCaseForEmbedding } from '../services/embedding';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
 
 export async function seedEmbeddings() {
   console.log('[Seed Embeddings] Starting vector embedding backfill for cases_fir...');
@@ -74,7 +78,13 @@ export async function seedEmbeddings() {
 }
 
 // Allow direct CLI execution: npx tsx backend/src/scripts/seedEmbeddings.ts
-if (require.main === module || process.argv[1]?.endsWith('seedEmbeddings.ts')) {
+const isDirectExecution = process.argv[1] && (
+  process.argv[1].endsWith('seedEmbeddings.ts') ||
+  process.argv[1].endsWith('seedEmbeddings.js') ||
+  path.resolve(process.argv[1]) === path.resolve(__filename)
+);
+
+if (isDirectExecution) {
   seedEmbeddings()
     .then(() => {
       console.log('[Seed Embeddings] Complete. Exiting process.');

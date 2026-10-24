@@ -166,7 +166,7 @@ class LiveOrMockClient {
     if (filters?.startDate) query.set('startDate', filters.startDate);
     if (filters?.endDate) query.set('endDate', filters.endDate);
     if (filters?.page) query.set('page', String(filters.page));
-    query.set('limit', filters?.limit ? String(filters.limit) : '1500');
+    query.set('limit', filters?.limit ? String(filters.limit) : '250');
 
     return this.safeFetch<FIRCase[]>(
       `/api/cases?${query.toString()}`,
@@ -229,7 +229,7 @@ class LiveOrMockClient {
     if (options?.policeStation) query.set('policeStation', options.policeStation);
     if (options?.district) query.set('district', options.district);
     if (options?.searchQuery) query.set('searchQuery', options.searchQuery);
-    query.set('limit', options?.limit ? String(options.limit) : '1500');
+    query.set('limit', options?.limit ? String(options.limit) : '250');
 
     return this.safeFetch<FIRCase[]>(
       `/api/spatial/incidents?${query.toString()}`,

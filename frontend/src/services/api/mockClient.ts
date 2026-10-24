@@ -1,5 +1,6 @@
 import {
   curatedCrimeDataset,
+  largeCrimeDataset,
   FIRCase,
   AccusedSuspect,
   CaseFilterParams,
@@ -19,10 +20,18 @@ import {
 } from '@kestrel/shared';
 
 const curatedDataset = curatedCrimeDataset;
+const combinedCases: FIRCase[] = [
+  ...((curatedDataset.cases || []) as FIRCase[]),
+  ...(((largeCrimeDataset as any)?.cases || []) as FIRCase[])
+];
+const combinedSuspects: AccusedSuspect[] = [
+  ...((curatedDataset.suspects || []) as AccusedSuspect[]),
+  ...(((largeCrimeDataset as any)?.suspects || []) as AccusedSuspect[])
+];
 
 export class MockIntelClient {
-  private cases: FIRCase[] = (curatedDataset.cases || []) as FIRCase[];
-  private suspects: AccusedSuspect[] = (curatedDataset.suspects || []) as AccusedSuspect[];
+  private cases: FIRCase[] = combinedCases;
+  private suspects: AccusedSuspect[] = combinedSuspects;
   private syndicates = curatedDataset.syndicates || [];
 
   async getCases(filters?: CaseFilterParams): Promise<ApiResponse<FIRCase[]>> {

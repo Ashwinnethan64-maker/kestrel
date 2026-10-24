@@ -227,7 +227,7 @@ export function GisPage() {
             policeStation: selectedStation !== "all" ? selectedStation : undefined,
             district: selectedDistrict !== "all" ? selectedDistrict : undefined,
             searchQuery: searchQuery.trim() || undefined,
-            limit: 1500,
+            limit: 250,
           });
           if (res.success && res.data) {
             setCases(res.data);
@@ -253,7 +253,7 @@ export function GisPage() {
 
   useEffect(() => {
     apiClient
-      .getSpatialIncidents(null, { limit: 1500 })
+      .getSpatialIncidents(null, { limit: 250 })
       .then((res) => {
         setCases(res.data);
         if (res.data.length > 0) {

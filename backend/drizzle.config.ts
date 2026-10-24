@@ -1,5 +1,12 @@
 import { defineConfig } from 'drizzle-kit';
-import { config } from './src/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 
 export default defineConfig({
   schema: './src/db/schema.ts',
@@ -15,6 +22,6 @@ export default defineConfig({
     'investigative_tasks'
   ],
   dbCredentials: {
-    url: config.databaseUrl
+    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
   }
 });
