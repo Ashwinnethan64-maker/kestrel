@@ -1,4 +1,4 @@
-import type { BoundingBox } from './spatial';
+import type { BoundingBox } from './spatial.js';
 
 export type TacticalLensMode = 'geo' | 'network' | 'dossier';
 
